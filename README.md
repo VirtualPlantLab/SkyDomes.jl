@@ -1,5 +1,11 @@
-# Solar
+# Sky
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://AleMorales.github.io/Solar.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://AleMorales.github.io/Solar.jl/dev)
-[![Build Status](https://travis-ci.com/AleMorales/Solar.jl.svg?branch=master)](https://travis-ci.com/AleMorales/Solar.jl)
+**This package is in development!! Do not use in production!!**
+
+Includes functions to compute:
+
+* Distribution of diffuse radiation over the sky dome following CIE standard
+
+* Solar zenith and azimuth angles based on the SPA algorithm (*work in progress*)
+
+* Solar irradiance on a clear sky based on report SAND2012-2389 (*to be developed*)

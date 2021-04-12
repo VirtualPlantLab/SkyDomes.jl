@@ -1,6 +1,6 @@
-using Solar
+using Sky
 using Test
 
-@testset "Solar.jl" begin
-    # Write your tests here.
-end
+@testset "Solar position" begin include("test_solar_position.jl") end
+@testset "Irradiance distribution" begin include("test_irradiance_distribution.jl") end
+

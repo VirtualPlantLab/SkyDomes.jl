@@ -1,7 +1,14 @@
-name = "Solar"
+name = "Sky"
 uuid = "1838625c-7cf7-40c6-898b-904883e4b556"
 authors = ["Alejandro Morales Sierra <morales.s.alejandro@gmail.com> and contributors"]
 version = "0.1.0"
+
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
+RCall = "6f49c342-dc21-5d91-9882-a32aef131414"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 julia = "1"

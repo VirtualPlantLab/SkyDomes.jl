@@ -28,7 +28,7 @@ jobs:
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
           using Documenter: doctest
-          using Solar
-          doctest(Solar)
+          using Sky
+          doctest(Sky)
           include("docs/make.jl")'
       after_success: skip
