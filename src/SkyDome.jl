@@ -1,3 +1,15 @@
+### This file contains public API ###
+# equal_angle_intervals
+# equal_solid_angles
+# radiance
+# radiosity
+# CIE
+# sky
+# StandardSky
+# UniformSky
+
+
+
 #= 
     Angular distribution of diffuse radiation in the sky integrated over
 discrete sectors.
@@ -27,45 +39,6 @@ end
 length(s::SkySectors) = length(s.θₗ)
 lastindex(s::SkySectors) = length(s)
 iterate(s::SkySectors, state = 1) = state > length(s) ? nothing : (s[state], state + 1)
-
-"""
-    polar(s::SkySectors)
-
-Draw a polar graph of the sky and its discretization into sectors. Each dot 
-represents the center of each sector.
-"""
-function polar(s::SkySectors)
-    
-    # Convert to data frame with ASCII names and hexadecimal degrees
-    df = DataFrame(theta_lower = ustrip.(degrees.(s.θₗ)), 
-                   theta_upper = ustrip.(degrees.(s.θᵤ)),
-                   theta = ustrip.(degrees.(s.θₗ .+ s.θᵤ)./2),
-                   phi_lower = ustrip.(degrees.(s.Φₗ)),
-                   phi_upper = ustrip.(degrees.(s.Φᵤ)),
-                   phi = ustrip.(degrees.(s.Φₗ .+ s.Φᵤ)./2))
-
-    # Make sure ggplot2 is loaded in the R session
-    R"if(!require(ggplot2)) install.packages('ggplot2')"
-    R"library(ggplot2)"
-    @rput df
-
-    # Polar plot with ggplot2
-    R"ggplot(data = df) +
-        geom_rect(aes(xmin = theta_lower, xmax = theta_upper, 
-                    ymin = phi_lower, ymax = phi_upper), colour = 'black', fill = 'white') +
-        geom_point(aes(x = theta, y = phi)) + 
-        scale_y_continuous(limits = c(0,360), expand = c(0,0),
-                        breaks = c(0,45,90,135,180,225,270,315)) +
-        scale_x_continuous(limits = c(0,90), expand = c(0,0),
-                        breaks = c(0,15,30,45,60,75,90)) +
-        coord_polar(theta = 'y') + 
-        labs(x = '', y = '') +
-        theme(panel.background = element_blank(),
-              panel.grid = element_blank(),
-              axis.ticks = element_blank())"
-
-end
-
 
 
 ################################################################################
@@ -153,45 +126,6 @@ length(s::SkyDome) = length(s.sectors.θₗ)
 lastindex(s::SkyDome) = length(s)
 iterate(s::SkyDome, state = 1) = state > length(s) ? nothing : (s[state], state + 1)
 
-"""
-    polar(s::SkyDome)
-
-Draw a polar graph of the sky and its discretization into sectors with a colour
-scale representing radiosity of sector as included in the `SkyDome` object.
-"""
-function polar(s::SkyDome)
-  
-  # Convert to data frame with ASCII names and hexadecimal degrees
-  df = DataFrame(theta_lower = ustrip.(degrees.(s.sectors.θₗ)), 
-                 theta_upper = ustrip.(degrees.(s.sectors.θᵤ)),
-                 theta = ustrip.(degrees.(s.sectors.θₗ .+ s.sectors.θᵤ)./2),
-                 phi_lower = ustrip.(degrees.(s.sectors.Φₗ)),
-                 phi_upper = ustrip.(degrees.(s.sectors.Φᵤ)),
-                 phi = ustrip.(degrees.(s.sectors.Φₗ .+ s.sectors.Φᵤ)./2),
-                 I = s.I)
-
-  # Make sure ggplot2 is loaded in the R session
-  R"if(!require(ggplot2)) install.packages('ggplot2')"
-  R"library(ggplot2)"
-  @rput df
-
-  # Polar plot with ggplot2
-  R"ggplot(data = df) +
-      geom_rect(aes(xmin = theta_lower, xmax = theta_upper, 
-                  ymin = phi_lower, ymax = phi_upper, fill = I), 
-                  colour = 'black') +
-      geom_point(aes(x = theta, y = phi), size = 0.5) + 
-      scale_y_continuous(limits = c(0,360), expand = c(0,0),
-                      breaks = c(0,45,90,135,180,225,270,315)) +
-      scale_x_continuous(limits = c(0,90), expand = c(0,0),
-                      breaks = c(0,15,30,45,60,75,90)) +
-      scale_fill_gradientn(colours = rainbow(3, rev = TRUE, alpha = 0.8)) +
-      coord_polar(theta = 'y') + 
-      labs(x = '', y = '') +
-      theme(panel.background = element_blank(),
-            panel.grid = element_blank(),
-            axis.ticks = element_blank())"
-end
 
 
 """
@@ -206,15 +140,133 @@ function radiance(m, θ, Φ)
 end
 
 """
-radiosity(m, sky::SkySectors, cosine = false)
+    radiosity(m, sky::SkySectors, cosine = true)
 
-Calculate the radiosity of each section of `sky`(multiplied by cos(θ) if `cosine = true`) 
-normalized by diffuse radiance on the horizontal plane 
+Calculate the radiosity of each section of `sky`(multiplied by cos(θ) if 
+`cosine = true`) normalized by diffuse radiance on the horizontal plane 
 for a given model of radiation `m`. See package documentation for details.
 """
-function radiosity(m, sky::SkySectors, cosine = false)
+function radiosity(m, sky::SkySectors, cosine = true)
     nothing
 end
+
+
+function DirectionalSource(sky::SkyDome, scene, nrays)
+    # Determine the zenith and azimuth angle of each sector
+    θₗ = convert(Vector{Float64}, getproperty.(sky.sectors, :θₗ))
+    θᵤ = convert(Vector{Float64}, getproperty.(sky.sectors, :θᵤ))
+    Φₗ = convert(Vector{Float64}, getproperty.(sky.sectors, :Φₗ))
+    Φᵤ = convert(Vector{Float64}, getproperty.(sky.sectors, :Φᵤ))
+    θ = (θₗ .+ θᵤ)./2
+    Φ = (Φₗ .+ Φᵤ)./2
+    # Distribute the total number of rays across the sources
+    nraysi = Int.(round.(nrays/length(θₗ)))
+    # Create an array of directional sources
+    [DirectionalSource(scene, θ = θ[i], Φ = Φ[i], radiosity = sky.I[i], 
+                       nrays = nraysi) for i in eachindex(θ)]
+end
+
+
+#This function creates a sky dome of diffuse irradiance for a given scene, using 
+# different models of angular distribution (sky_model) and methods of 
+# discretization (dome_method). It returns a vector of directional sources as
+# required by the ray tracer in VPL.
+function sky_dome(scene; Idif = 1.0, nrays_dif = 1_000, 
+                 sky_model = StandardSky, dome_method = equal_solid_angles, ntheta = 9, 
+                  nphi = 12, kwargs...)
+    # Generate the angular distribution of irradiance according to different methods
+    if sky_model == CIE
+        sky_distro = CIE(kwargs...)
+    else
+        sky_distro = sky_model()
+    end
+    # Discretization method
+    dome_mesh = dome_method(ntheta, nphi)
+    # Generate the sky sectors and their radiosity
+    skydome = radiosity(sky_distro, dome_mesh, true)
+    skydome.I .*= Idif
+    # Convert the sky dome into a vector of DirectionalSources
+    sources = DirectionalSource(skydome, scene, nrays_dif)
+    return sources
+end
+
+################################################################################
+#################################### Sky  ######################################
+################################################################################
+
+"""
+    sky(scene; Idir = 0.77, nrays_dir = 100_000, theta_dir = 0.0, phi_dir = 0.0, 
+               Idif = 0.23, nrays_dif = 1_000_000, sky_model = StandardSky,
+               dome_method = equal_solid_angles, ntheta = 9, nphi = 12, 
+               kwargs...)
+
+Create a vector of directional radiation sources representing diffuse and 
+direct solar radiation for a given scene.
+
+# Arguments
+- `scene`: A Scene object generated by VPL.
+- `Idir`: The direct solar radiation measured on the horizontal plane.
+- `nrays_dir`: The number of rays to be generated for direct solar radiation.
+- `theta_dir`: The zenith angle of the sun position (radians).
+- `phi_dir`: The azimuthal angle of the sun position (radians).
+- `Idif`: The diffuse solar radiation measured on the horizontal plane.
+- `nrays_dif`: The total number of rays to be generated diffuse solar radiation.
+- `sky_model`: The angular distribution of diffuse irradiance (`StandardSky`, `UniformSky` or `CIE`).
+- `dome_method`: The method to discretize hemisphere into patches for diffuse solar radiation (`equal_solid_angles` or `equal_angle_intervals`).
+- `ntheta`: The number of divisions along the zenith angle for `dome_method`.
+- `nphi`: The number of divisions along the azimuthal angle for `dome_method`.
+- `kwargs...`: Additional arguments to be used when `dome_method = CIE`
+
+# Returns
+A vector of directional sources that can be used for ray tracing calculations in VPL.
+```
+"""
+function sky(scene; 
+             # Inputs for direct solar radiation
+             Idir        = 0.77, 
+             nrays_dir   = 100_000, 
+             theta_dir   = 0.0,
+             phi_dir     = 0.0,
+             # Inputs for diffuse solar radiation
+             Idif        = 0.23, 
+             nrays_dif   = 1_000_000,  
+             sky_model   = StandardSky, 
+             dome_method = equal_solid_angles, 
+             ntheta      = 9, 
+             nphi        = 12, 
+             kwargs...)
+    # Ensure valid inputs
+    @assert Idir >= 0.0
+    @assert Idif >= 0.0
+    # To avoid multiple repetitions
+    has_diffuse = false
+    has_direct  = false
+    # Generation dome with diffuse solar radiation
+    if Idif > 0.0
+        @assert ntheta > 0
+        @assert nphi > 0
+        sources = sky_dome(scene, Idif = Idif, nrays_dif = nrays_dif, 
+                          sky_model = sky_model, dome_method = dome_method, 
+                          ntheta = ntheta, nphi = nphi, kwargs...)
+        has_diffuse = true
+    end
+    # Generate directional source for direct solar radiation
+    if Idir > 0.0
+        source = DirectionalSource(scene, θ = theta_dir, Φ = phi_dir, 
+                  radiosity = Idir, nrays = nrays_dir)
+        has_direct = true
+        has_diffuse && push!(sources, source)            
+    end
+    # Return correct results as a vector of sources
+    if has_diffuse
+        return sources
+    elseif has_direct
+        return [source]
+    else
+        error("Attempt to create a sky with Idir = Idif = 0")
+    end
+end
+
 
 ################################################################################
 ############################## Uniform radiation ###############################

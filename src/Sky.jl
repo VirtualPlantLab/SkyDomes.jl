@@ -2,11 +2,11 @@ module Sky
 
 import Base: getindex, lastindex, length, iterate
 
-export UniformSky, StandardSky, CIE, radiance, radiosity, polar,
-       equal_solid_angles, equal_angle_intervals
+export UniformSky, StandardSky, CIE, radiance, radiosity,
+       equal_solid_angles, equal_angle_intervals, sky, clear_sky, 
+       waveband_conversion
 
 using DataFrames
-using RCall 
 using HCubature
 import Unitful
 const UN = Unitful
@@ -14,9 +14,11 @@ import Unitful: °, rad, hr, ustrip, @u_str, m, mbar, minute, d, s, K
 import StaticArrays
 const SA = StaticArrays
 import StaticArrays: SVector
+import VPL: DirectionalSource, Vec, O
+import VPL.RT: AABB
 
 include("Utils.jl")
 include("SkyDome.jl")
-include("SolarAngles/SPA.jl")
+include("SolarIrradiance.jl")
 
 end

@@ -1,11 +1,7 @@
 # Sky
 
-**This package is in development!! Do not use in production!!**
+**This package is in development**
 
-Includes functions to compute:
-
-* Distribution of diffuse radiation over the sky dome following CIE standard
-
-* Solar zenith and azimuth angles based on the SPA algorithm (*work in progress*)
-
-* Solar irradiance on a clear sky based on report SAND2012-2389 (*to be developed*)
+Includes functions to compute clear sky solar radiation (direct and diffuse) and
+its distribution over the sky using different angular distribution models for
+the diffuse radiation. It is meant to be used in combination with VPL.jl.
