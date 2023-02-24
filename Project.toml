@@ -10,9 +10,6 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 VPL = "bb250ff9-e5b1-4ad2-87ac-b577c1acaa48"
 
-[compat]
-julia = "1"
-
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
