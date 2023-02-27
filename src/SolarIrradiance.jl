@@ -36,7 +36,7 @@ function air_mass(cos_theta, theta)
 end
 
 # Calculate the length of the diurnal part of a day based on latitude and declination angle
-function dayLength(lat, dec)
+function day_length(lat, dec)
     # Calculate sunset angle with respect to solar noon, including corrections for extreme latitudes
     cosSunset = -tan(lat)*tan(dec)
     sunset = ifelse(cosSunset > 1.0, 0.0, ifelse(cosSunset < -1.0,  π, acos(cosSunset)))
@@ -87,7 +87,7 @@ function clear_sky(;lat, DOY, f, altitude = 0.0, TL = 4.0)
     # Basic astronomical quantities
     Io = extraterrestrial(DOY)
     dec = declination(DOY) # declination angle of the sun
-    DL = dayLength(lat, dec)
+    DL = day_length(lat, dec)
     t  = timeOfDay(f, DL)
     cos_theta, theta = solar_zenith_angle(;lat = lat, dec = dec, t = t)
     # Clear sky model by Ineichen and Perez (2002)
