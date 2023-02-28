@@ -280,11 +280,6 @@ Model of uniform sky diffuse radiation. See package documentation for details.
 struct UniformSky <: RadianceDistribution
 end
 
-# Radiance for a given angle normalized by horizontal irradiance
-function radiance(m::UniformSky, θ::UN.Quantity, Φ::UN.Quantity)
-    1/π/rad^2
-end
-
 # Radiosity for a sector of the sky normalized by horizontal irradiance
 function radiosity(m::UniformSky, sky::SkySectors, cosine = false)
     if cosine
@@ -307,11 +302,6 @@ Standard model of overcast sky diffuse radiation Moon & Spencer (1942).
 See package documentation for details.
 """
 struct StandardSky <: RadianceDistribution
-end
-
-# Radiance for a given angle normalized by horizontal irradiance
-function radiance(m::StandardSky, θ::UN.Quantity, Φ::UN.Quantity)
-    (3 + 6*cos(θ))/7/π/rad^2
 end
 
 # Radiosity for a sector of the sky normalized by horizontal irradiance

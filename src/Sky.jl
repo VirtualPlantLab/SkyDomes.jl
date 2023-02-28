@@ -2,22 +2,17 @@ module Sky
 
 import Base: getindex, lastindex, length, iterate
 
-export UniformSky, StandardSky, CIE, radiance, radiosity,
+export UniformSky, StandardSky, CIE, radiosity,
        equal_solid_angles, equal_angle_intervals, sky, clear_sky, 
        waveband_conversion, day_length, declination
 
 using DataFrames
 using HCubature
-import Unitful
-const UN = Unitful
-import Unitful: °, rad, hr, ustrip, @u_str, m, mbar, minute, d, s, K
-import StaticArrays
-const SA = StaticArrays
+import StaticArrays as SA
 import StaticArrays: SVector
 import VPL: DirectionalSource, Vec, O
 import VPL.RT: AABB
 
-include("Utils.jl")
 include("SkyDome.jl")
 include("SolarIrradiance.jl")
 
