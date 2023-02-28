@@ -1,22 +1,19 @@
 using Sky
 using Test
-import Unitful: rad
 
 let
     
     # Discretization of the sky using two methods
     angles = equal_angle_intervals(9, 12);
     solid = equal_solid_angles(9,12);
-    polar(solid)
-    @test solid[end][2] ≈ (π/2)rad
-    @test solid[end][4] ≈ (2π)rad
+    @test solid[end][2] ≈ π/2
+    @test solid[end][4] ≈ 2π
 
     # Uniform distribution
     uniform = UniformSky()
     solid_uniform = radiosity(uniform, solid, true);
-    polar(solid_uniform)
-    @test solid_uniform[end][2] ≈ (π/2)rad
-    @test solid_uniform[end][4] ≈ (2π)rad
+    @test solid_uniform[end][2] ≈ π/2
+    @test solid_uniform[end][4] ≈ 2π
     @test sum(solid_uniform.I) ≈ 1.0
     angles_uniform = radiosity(uniform, angles, true);
     @test sum(angles_uniform.I) ≈ 1.0

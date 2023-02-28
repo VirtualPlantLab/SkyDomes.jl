@@ -53,12 +53,12 @@ the same angle intervals for each sector (Δθ = π/2/ntheta and ΔΦ = 2π/nphi
 Returns an object of type `SkySectors`. See package documentation for details.
 """
 function equal_angle_intervals(ntheta, nphi)
-    Δθ = π/2/ntheta*1.0rad
-    ΔΦ = 2π/nphi*1.0rad
-    θₗ = repeat(0.0rad:Δθ:(π/2)rad - Δθ, inner = nphi)
-    θᵤ = repeat(Δθ:Δθ:(π/2)rad, inner = nphi)
-    Φₗ = repeat(0.0rad:ΔΦ:(2π)rad - ΔΦ, outer = ntheta)
-    Φᵤ = repeat(ΔΦ:ΔΦ:(2π)rad, outer = ntheta)
+    Δθ = π/2/ntheta*1.0
+    ΔΦ = 2π/nphi*1.0
+    θₗ = repeat(0.0:Δθ:(π/2) - Δθ, inner = nphi)
+    θᵤ = repeat(Δθ:Δθ:(π/2), inner = nphi)
+    Φₗ = repeat(0.0:ΔΦ:(2π) - ΔΦ, outer = ntheta)
+    Φᵤ = repeat(ΔΦ:ΔΦ:(2π), outer = ntheta)
 
     SkySectors(θₗ, θᵤ, Φₗ, Φᵤ)
 end
@@ -72,16 +72,16 @@ Returns an object of type `SkySectors`. See package documentation for details.
 """
 function equal_solid_angles(ntheta, nphi)
     # Distribution sectors along zenith angles
-    Δθ = (π/2/ntheta)rad
-    uθₗ = 0.0rad:Δθ:(π/2)rad - Δθ
-    uθᵤ = Δθ:Δθ:(π/2)rad
+    Δθ = (π/2/ntheta)
+    uθₗ = 0.0:Δθ:(π/2) - Δθ
+    uθᵤ = Δθ:Δθ:(π/2)
 
     # Calculate number of azimuth sectors and ΔΦ per zenith ring 
     fac = cos.(uθₗ) - cos.(uθᵤ)
     n = ntheta*nphi
     nphis = round.(fac./sum(fac).*n)
     sum(nphis) != n && (nphis[end] = nphis[end] + n - sum(nphis))
-    ΔΦs = (2π./nphis)rad
+    ΔΦs = (2π./nphis)
 
     # Generate coordinates of all sectors
     c = 1
@@ -283,9 +283,9 @@ end
 # Radiosity for a sector of the sky normalized by horizontal irradiance
 function radiosity(m::UniformSky, sky::SkySectors, cosine = false)
     if cosine
-        I = [(s.Φᵤ - s.Φₗ)*(cos(s.θₗ)^2 - cos(s.θᵤ)^2)/2/π/rad for s in sky]
+        I = [(s.Φᵤ - s.Φₗ)*(cos(s.θₗ)^2 - cos(s.θᵤ)^2)/2/π for s in sky]
     else
-        I = [(s.Φᵤ - s.Φₗ)*(cos(s.θₗ) - cos(s.θᵤ))/π/rad for s in sky]
+        I = [(s.Φᵤ - s.Φₗ)*(cos(s.θₗ) - cos(s.θᵤ))/π for s in sky]
     end
     SkyDome(sky, I)
 end
@@ -307,9 +307,9 @@ end
 # Radiosity for a sector of the sky normalized by horizontal irradiance
 function radiosity(m::StandardSky, sky::SkySectors, cosine = false)
     if cosine
-        I = [(s.Φᵤ - s.Φₗ)*((4cos(s.θₗ) + 3)*cos(s.θₗ)^2 - (4cos(s.θᵤ) + 3)*cos(s.θᵤ)^2)/14/π/rad for s in sky]
+        I = [(s.Φᵤ - s.Φₗ)*((4cos(s.θₗ) + 3)*cos(s.θₗ)^2 - (4cos(s.θᵤ) + 3)*cos(s.θᵤ)^2)/14/π for s in sky]
     else
-        I = [3*(s.Φᵤ - s.Φₗ)*((cos(s.θₗ) + 1)*cos(s.θₗ) - (cos(s.θᵤ) + 1)*cos(s.θᵤ))/7/π/rad for s in sky]
+        I = [3*(s.Φᵤ - s.Φₗ)*((cos(s.θₗ) + 1)*cos(s.θₗ) - (cos(s.θᵤ) + 1)*cos(s.θᵤ))/7/π for s in sky]
     end
     SkyDome(sky, I)
 end
@@ -346,7 +346,7 @@ numerical integration algorithm. See package documentation for details.
 function CIE(type::Int; θₛ = 0.0, Φₛ = 0.0, rtol = sqrt(eps(Float64)), atol = 0.0, 
              maxevals = typemax(Int))
     a, b, c, d, e = CIEmodel(type)
-    denom = hcubature(x -> f_denom(x[1]*rad, x[2]*rad, a, b, c, d, e, θₛ, Φₛ),
+    denom = hcubature(x -> f_denom(x[1], x[2], a, b, c, d, e, θₛ, Φₛ),
                       (0.0, 0.0), (π/2, 2π); rtol = rtol, atol = atol, 
                       maxevals = maxevals)
     CIE(a, b, c, d, e, θₛ, Φₛ, denom[1])
@@ -403,22 +403,20 @@ fCIE(a, b, c, d, e, θ, γₛ) =
 # Radiance for a given angle normalized by horizontal irradiance
 function radiance(m::CIE, θ, Φ)
     γₛ = acos(cos(m.θₛ)*cos(θ) + sin(m.θₛ)*sin(θ)*cos(abs(Φ - m.Φₛ)))
-    fCIE(m.a, m.b, m.c, m.d, m.e, θ, γₛ)/m.denom/rad^2
+    fCIE(m.a, m.b, m.c, m.d, m.e, θ, γₛ)/m.denom
 end
 
 # Radiosity for a sector of the sky normalized by horizontal irradiance
 function radiosity(m::CIE, sky::SkySectors, cosine = false;
                     rtol=sqrt(eps(Float64)), atol=0.0, maxevals=typemax(Int))
     if cosine
-        I = [hcubature(x -> radiance(m, x[1]*rad, x[2]*rad)*cos(x[1]*rad)*sin(x[1]*rad)*rad^2,
-                      (ustrip(s.θₗ),  ustrip(s.Φₗ)), 
-                      (ustrip(s.θᵤ), ustrip(s.Φᵤ)); 
+        I = [hcubature(x -> radiance(m, x[1], x[2])*cos(x[1])*sin(x[1]),
+                      (s.θₗ,  s.Φₗ), (s.θᵤ, s.Φᵤ); 
                       rtol = rtol, atol = atol, 
                       maxevals = maxevals)[1] for s in sky]
     else
-        I = [hcubature(x -> radiance(m, x[1]*rad, x[2]*rad)*sin(x[1]*rad)*rad^2,
-                      (ustrip(s.θₗ),  ustrip(s.Φₗ)), 
-                      (ustrip(s.θᵤ), ustrip(s.Φᵤ)); 
+        I = [hcubature(x -> radiance(m, x[1], x[2])*sin(x[1]),
+                      (s.θₗ,  s.Φₗ), (s.θᵤ, s.Φᵤ); 
                       rtol = rtol, atol = atol, 
                       maxevals = maxevals)[1] for s in sky]
     end
