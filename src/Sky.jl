@@ -11,7 +11,7 @@ using HCubature
 import StaticArrays as SA
 import StaticArrays: SVector
 import PlantGeomPrimitives: Vec
-import PlantRayTracer: DirectionalSource, Vec, O
+import PlantRayTracer: DirectionalSource, O
 
 include("SkyDome.jl")
 include("SolarIrradiance.jl")
