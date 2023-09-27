@@ -1,16 +1,20 @@
-using Documenter, VPL, DocumenterMarkdown
+using Sky
+using Documenter
 
 makedocs(;
+    doctest = false,
     modules = [Sky],
-    format = Markdown(),#Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
-    pages=[
+    authors = "Alejandro Morales Sierra <alejandro.moralessierra@wur.nl> and contributors",
+    repo = "https://github.com/VirtualPlantLab/Sky.jl/blob/{commit}{path}#{line}",
+    sitename = "Sky.jl",
+    format = Documenter.HTML(;
+        prettyurls = get(ENV, "CI", "false") == "true",
+        edit_link = "master",
+        assets = String[]),
+    pages = [
         "API" => "Sky.md",
-    ],
-    repo="https://github.com/AleMorales/Sky.jl/blob/{commit}{path}#L{line}",
-    sitename="Sky.jl",
-    authors="Alejandro Morales, Wageningen University & Research"
-)
+    ])
 
-# deploydocs(;
-#     repo="github.com/AleMorales/VPL.jl",
-# )
+deploydocs(;
+    repo = "github.com/VirtualPlantLab/Sky.jl.git",
+    devbranch = "master")

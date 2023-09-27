@@ -1,15 +1,14 @@
 using Sky
 using Test
 
-
 let
-    
+
     # Check that zenith angles are calculated correctly    
     n = 1000
-    lats = .-π./2 .+  π.*rand(n)
+    lats = .-π ./ 2 .+ π .* rand(n)
     DOYs = rand(1:365, n)
     decs = Sky.declination.(DOYs)
-    ts   = 24.0.*rand(n)
+    ts = 24.0 .* rand(n)
     temp = [Sky.solar_zenith_angle(lat = lats[i], dec = decs[i], t = ts[i]) for i in 1:n]
     cos_theta, theta = Tuple(getindex.(temp, i) for i in 1:2)
     @test maximum(theta) <= π
@@ -18,7 +17,7 @@ let
     @test minimum(cos_theta) >= -1.0
 
     # Compute air mass for the different cos_theta and theta from above
-    thetas = 0.0:0.01:π/2
+    thetas = 0.0:0.01:(π / 2)
     ams = Sky.air_mass.(cos.(thetas), thetas)
 
     # Check that extraterrestrial radiation is computed correctly
@@ -28,7 +27,7 @@ let
     @test maximum(I0s) < 1413
 
     # Calculate solar radiation and components for a clear sky
-    temp = [Sky.clear_sky.(lat = π/4, DOY = 182, f = x) for x in 0.01:0.01:0.99]
+    temp = [Sky.clear_sky.(lat = π / 4, DOY = 182, f = x) for x in 0.01:0.01:0.99]
     Igs, Idirs, Idifs = Tuple(getindex.(temp, i) for i in 1:3)
     @test minimum(Igs) > eps(Float64)
     @test all(abs.(Igs .- Idirs) .>= eps(Float64))
@@ -44,5 +43,4 @@ let
             end
         end
     end
-
 end

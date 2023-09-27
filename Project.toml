@@ -10,8 +10,9 @@ PlantGeomPrimitives = "7eef3cc5-4580-4ff0-8f6f-933507db6664"
 PlantRayTracer = "78485975-e4aa-407d-b3bb-ded5a4265d05"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test"]
+[compat]
+DataFrames = "1.6.1"
+HCubature = "1.5.1"
+PlantGeomPrimitives = "0.0.1"
+PlantRayTracer = "0.0.1"
+StaticArrays = "1.6.2"
