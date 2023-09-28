@@ -1,8 +1,8 @@
 
-# Module Sky
+# Module SkyDomes
 
 ```@meta
-CurrentModule = Sky
+CurrentModule = SkyDomes
 ```
 
 ```@docs

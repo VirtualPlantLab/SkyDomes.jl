@@ -1,14 +1,14 @@
-# Sky
+# SkyDomes
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://VirtualPlantLab.github.io/Sky.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://VirtualPlantLab.github.io/Sky.jl/dev/)
-[![CI](https://github.com/VirtualPlantLab/Sky.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/VirtualPlantLab/Sky.jl/actions/workflows/CI.yml)
-[![Coverage](https://codecov.io/gh/VirtualPlantLab/Sky.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/VirtualPlantLab/Sky.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://VirtualPlantLab.github.io/SkyDomes.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://VirtualPlantLab.github.io/SkyDomes.jl/dev/)
+[![CI](https://github.com/VirtualPlantLab/SkyDomes.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/VirtualPlantLab/SkyDomes.jl/actions/workflows/CI.yml)
+[![Coverage](https://codecov.io/gh/VirtualPlantLab/SkyDomes.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/VirtualPlantLab/SkyDomes.jl)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
-The package Sky provides a function to calculate the solar radiation on a
+The package SkyDomes provides a function to calculate the solar radiation on a
 horizontal surface (for clear skies) as a function of latitude, day of year and
 time of the day and for different wavebands. In addition, it can generate light
 sources as required by [VPL](https://github.com/VirtualPlantLab/VPL.jl) to
@@ -16,17 +16,17 @@ simulate the light distribution in a 3D scene.
 
 ## Installation
 
-To install Sky.jl, you can use the following command:
+To install SkyDomes.jl, you can use the following command:
 
 ```julia
-] add Sky
+] add SkyDomes
 ```
 
 Or, if you prefer the development version:
 
 ```julia
 import Pkg
-Pkg.add(url = "https://github.com/VirtualPlantLab/Sky.jl", rev = "master")
+Pkg.add(url = "https://github.com/VirtualPlantLab/SkyDomes.jl", rev = "master")
 ```
 
 ## Usage
@@ -41,7 +41,7 @@ the total solar radiation in W/m² as well as direct and diffuse components. For
 example:
 
 ```julia
-using Sky
+using SkyDomesDomes
 lat = 52.0*π/180.0 # latitude in radians
 DOY = 182
 f = 0.5 # solar noon
@@ -64,7 +64,7 @@ Idif_PAR = f_PAR_dif*Idif # PAR in umol/m²/s
 ### Light sources for ray tracing
 
 Once the direct and diffuse solar radiation in the relevant wavebands and units
-have been calculated, the function `sky` can be used to generate the light
+have been calculated, the function `SkyDomes` can be used to generate the light
 sources required by VPL to simulate the light distribution in a 3D scene. For
 example, a simple horizontal tile (representing soil) in VPL may be created as
 follows:
@@ -88,7 +88,7 @@ scene = RTScene(mesh = r, ids = ids, materials = materials)
 ```
 
 If we want to compute the amount of solar radiation absorbed by this tile, we
-need to create a series of light sources. The function `sky` can be used for
+need to create a series of light sources. The function `SkyDomes` can be used for
 that purpose:
 
 ```julia
@@ -97,8 +97,8 @@ sources = sky(scene,
              nrays_dir = 1_000_000, # Number of rays for direct solar radiation
              Idif = Idif_PAR, # Diffuse solar radiation from above
              nrays_dif = 10_000_000, # Total number of rays for diffuse solar radiation
-             sky_model = StandardSky, # Angular distribution of solar radiation
-             dome_method = equal_solid_angles, # Discretization of the sky dome
+             SkyDomes_model = StandardSkyDomes, # Angular distribution of solar radiation
+             dome_method = equal_solid_angles, # Discretization of the SkyDomes dome
              ntheta = 9, # Number of discretization steps in the zenith angle
              nphi = 12) # Number of discretization steps in the azimuth angle
 ```
@@ -108,8 +108,8 @@ the scene. Direct solar radiation is represented by a single directiona light
 source that will emmit a number of rays given by `nrays_dir`. Diffuse solar
 radiation is represented by a hemispherical dome of directional light sources
 that will emmit a total of `nrays_dif` rays. The angular distribution of the
-diffuse solar radiation and the discretization of the sky dome can be modified
-via `dome_method, sky_model`, `ntheta` and `nphi`. See API documentation and
+diffuse solar radiation and the discretization of the SkyDomes dome can be modified
+via `dome_method, SkyDomes_model`, `ntheta` and `nphi`. See API documentation and
 [VPL documentation](http://virtualplantlab.com/) for details.
 
 Once the light sources are created, a ray tracing object can be generated

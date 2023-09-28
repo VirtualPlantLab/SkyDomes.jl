@@ -1,4 +1,4 @@
-module Sky
+module SkyDomes
 
 import Base: getindex, lastindex, length, iterate
 
@@ -13,7 +13,7 @@ import StaticArrays: SVector
 import PlantGeomPrimitives: Vec
 import PlantRayTracer: DirectionalSource, O
 
-include("SkyDome.jl")
+include("Sources.jl")
 include("SolarIrradiance.jl")
 
 end

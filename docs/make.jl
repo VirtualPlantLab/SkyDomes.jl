@@ -1,12 +1,12 @@
-using Sky
+using SkyDomes
 using Documenter
 
 makedocs(;
     doctest = false,
-    modules = [Sky],
+    modules = [SkyDomes],
     authors = "Alejandro Morales Sierra <alejandro.moralessierra@wur.nl> and contributors",
-    repo = "https://github.com/VirtualPlantLab/Sky.jl/blob/{commit}{path}#{line}",
-    sitename = "Sky.jl",
+    repo = "https://github.com/VirtualPlantLab/SkyDomes.jl/blob/{commit}{path}#{line}",
+    sitename = "SkyDomes.jl",
     format = Documenter.HTML(;
         prettyurls = get(ENV, "CI", "false") == "true",
         edit_link = "master",
@@ -16,5 +16,5 @@ makedocs(;
     ])
 
 deploydocs(;
-    repo = "github.com/VirtualPlantLab/Sky.jl.git",
+    repo = "github.com/VirtualPlantLab/SkyDomes.jl.git",
     devbranch = "master")

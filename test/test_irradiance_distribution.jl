@@ -1,4 +1,4 @@
-using Sky
+using SkyDomes
 using Test
 using StaticArrays
 

@@ -1,19 +1,19 @@
-using Sky
+using SkyDomes
 using Test
 using Documenter
 import Aqua
 
 # Test examples on documentation (jldoctest blocks)
-DocMeta.setdocmeta!(Sky,
+DocMeta.setdocmeta!(SkyDomes,
     :DocTestSetup,
-    :(using Sky);
+    :(using SkyDomes);
     recursive = true)
-doctest(Sky)
+doctest(SkyDomes)
 
 # Aqua
 @testset "Aqua" begin
-    Aqua.test_all(Sky, ambiguities = false, project_extras = false)
-    Aqua.test_ambiguities([Sky])
+    Aqua.test_all(SkyDomes, ambiguities = false, project_extras = false)
+    Aqua.test_ambiguities([SkyDomes])
 end
 
 @testset "Solar irradiance" begin

@@ -8,7 +8,7 @@
 # StandardSky
 # UniformSky
 
-#= 
+#=
     Angular distribution of diffuse radiation in the sky integrated over
 discrete sectors.
 =#
@@ -44,8 +44,8 @@ iterate(s::SkySectors, state = 1) = state > length(s) ? nothing : (s[state], sta
 """
     equal_angle_intervals(ntheta, nphi)
 
-Discretize the sky into `ntheta` zenith rings of `nphi` sectors each assuming 
-the same angle intervals for each sector (Δθ = π/2/ntheta and ΔΦ = 2π/nphi). 
+Discretize the sky into `ntheta` zenith rings of `nphi` sectors each assuming
+the same angle intervals for each sector (Δθ = π/2/ntheta and ΔΦ = 2π/nphi).
 Returns an object of type `SkySectors`. See package documentation for details.
 """
 function equal_angle_intervals(ntheta, nphi)
@@ -72,7 +72,7 @@ function equal_solid_angles(ntheta, nphi)
     uθₗ = 0.0:Δθ:((π / 2) - Δθ)
     uθᵤ = Δθ:Δθ:(π / 2)
 
-    # Calculate number of azimuth sectors and ΔΦ per zenith ring 
+    # Calculate number of azimuth sectors and ΔΦ per zenith ring
     fac = cos.(uθₗ) - cos.(uθᵤ)
     n = ntheta * nphi
     nphis = round.(fac ./ sum(fac) .* n)
@@ -113,7 +113,7 @@ end
 
 function getindex(s::SkyDome, i::Int)
     (θₗ = s.sectors.θₗ[i], θᵤ = s.sectors.θᵤ[i],
-        Φₗ = s.sectors.Φₗ[i], Φᵤ = s.sectors.Φᵤ[i],
+        Φₗ = s.sectors.Φₗ[i], WΦᵤ = s.sectors.Φᵤ[i],
         I = s.I[i])
 end
 length(s::SkyDome) = length(s.sectors.θₗ)
@@ -135,8 +135,8 @@ function DirectionalSource(sky::SkyDome, scene, nrays)
         nrays = nraysi) for i in eachindex(θ)]
 end
 
-#This function creates a sky dome of diffuse irradiance for a given scene, using 
-# different models of angular distribution (sky_model) and methods of 
+#This function creates a sky dome of diffuse irradiance for a given scene, using
+# different models of angular distribution (sky_model) and methods of
 # discretization (dome_method). It returns a vector of directional sources as
 # required by the ray tracer in VPL.
 function sky_dome(scene; Idif = 1.0, nrays_dif = 1_000,
@@ -162,12 +162,12 @@ end
 ################################################################################
 
 """
-    sky(scene; Idir = 0.77, nrays_dir = 100_000, theta_dir = 0.0, phi_dir = 0.0, 
+    sky(scene; Idir = 0.77, nrays_dir = 100_000, theta_dir = 0.0, phi_dir = 0.0,
                Idif = 0.23, nrays_dif = 1_000_000, sky_model = StandardSky,
-               dome_method = equal_solid_angles, ntheta = 9, nphi = 12, 
+               dome_method = equal_solid_angles, ntheta = 9, nphi = 12,
                kwargs...)
 
-Create a vector of directional radiation sources representing diffuse and 
+Create a vector of directional radiation sources representing diffuse and
 direct solar radiation for a given scene.
 
 # Arguments
@@ -261,7 +261,7 @@ end
     radiosity(m::UniformSky, sky::SkySectors, Idif::SVector{nw, Float64}) where nw
 
 Calculate the radiosity of each section of `sky` given diffuse irradiance on the
-horizontal plane (`Idif` with `nw` wavebands) assuming a Uniform Sky model. See 
+horizontal plane (`Idif` with `nw` wavebands) assuming a Uniform Sky model. See
 package documentation for details.
 """
 function radiosity(m::UniformSky,
@@ -288,8 +288,8 @@ end
 """
     radiosity(m::StandardSky, sky::SkySectors, ::Type{Val{nw}} = Val{1})
 
-Calculate the radiosity of each section of `sky` normalized by diffuse radiance 
-on the horizontal plane assuming a Standard Sky model and for `nw` 
+Calculate the radiosity of each section of `sky` normalized by diffuse radiance
+on the horizontal plane assuming a Standard Sky model and for `nw`
 wavebands. See package documentation for details.
 """
 function radiosity(m::StandardSky,
@@ -320,10 +320,10 @@ struct CIE <: RadianceDistribution
 end
 
 """
-    CIE(;type = 1, θₛ = 0.0, Φₛ = 0.0, rtol = sqrt(eps(Float64)), atol = 0.0, 
+    CIE(;type = 1, θₛ = 0.0, Φₛ = 0.0, rtol = sqrt(eps(Float64)), atol = 0.0,
 maxevals = typemax(Int))
 
-Create a standard CIE model of sky diffuse radiance as described by 
+Create a standard CIE model of sky diffuse radiance as described by
 Darula and Kittler (2002). The argument `type` can have values from 1 to 15
 representing the 15 standard CIE models. θₛ and Φₛ are the zenith and azimuth
 angles of the solar disc. `rtol` and `atol` and `maxevals` are the relative
