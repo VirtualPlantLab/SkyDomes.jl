@@ -12,7 +12,7 @@ makedocs(;
         edit_link = "master",
         assets = String[]),
     pages = [
-        "API" => "Sky.md",
+        "API" => "index.md",
     ])
 
 deploydocs(;
