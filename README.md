@@ -11,7 +11,7 @@
 The package SkyDomes provides a function to calculate the solar radiation on a
 horizontal surface (for clear skies) as a function of latitude, day of year and
 time of the day and for different wavebands. In addition, it can generate light
-sources as required by [VPL](https://github.com/VirtualPlantLab/VPL.jl) to
+sources as required by [VirtualPlantLab.jl](https://github.com/VirtualPlantLab/VirtualPlantLab.jl) to
 simulate the light distribution in a 3D scene.
 
 ## Installation
@@ -70,7 +70,7 @@ example, a simple horizontal tile (representing soil) in VPL may be created as
 follows:
 
 ```julia
-using VPL
+using VirtualPlantLab
 r = Rectangle(length = 2.0, width = 1.0)
 rotatey!(r, -π/2) # To put it in the XY plane
 translate!(r, Vec(0.0, 0.5, 0.0))
