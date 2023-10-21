@@ -1,7 +1,7 @@
 name = "SkyDomes"
 uuid = "1838625c-7cf7-40c6-898b-904883e4b556"
 authors = ["Alejandro Morales Sierra <morales.s.alejandro@gmail.com> and contributors"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
