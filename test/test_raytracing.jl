@@ -47,10 +47,10 @@ let
 
     # 6. Check the power in the scene
     power_out = sum(source.power * source.nrays for source in sources)[1]
-    @test materials[1].power[1] / power_out ≈ 1.0
-    @test materials[1].power[2] / power_out ≈ 1.0
-    @test materials[2].power[1] / power_out ≈ 0.0
-    @test materials[2].power[2] / power_out ≈ 0.0
-    @test materials[1].power[1] / area(r) ≈ Idir_PAR + Idif_PAR
-    @test materials[1].power[2] / area(r) ≈ Idir_PAR + Idif_PAR
+    @test power(materials[1])[1] / power_out ≈ 1.0
+    @test power(materials[1])[2] / power_out ≈ 1.0
+    @test power(materials[2])[1] / power_out ≈ 0.0
+    @test power(materials[2])[2] / power_out ≈ 0.0
+    @test power(materials[1])[1] / area(r) ≈ Idir_PAR + Idif_PAR
+    @test power(materials[1])[2] / area(r) ≈ Idir_PAR + Idif_PAR
 end
