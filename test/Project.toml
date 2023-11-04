@@ -1,7 +1,10 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 PlantGeomPrimitives = "7eef3cc5-4580-4ff0-8f6f-933507db6664"
+PlantGeomTurtle = "7d6e2781-1c99-4c66-97ec-106669f3e96e"
+PlantGraphs = "615ad455-9aac-4340-9247-71ef610f781a"
 PlantRayTracer = "78485975-e4aa-407d-b3bb-ded5a4265d05"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
