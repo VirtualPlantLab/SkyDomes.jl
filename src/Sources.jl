@@ -260,15 +260,16 @@ end
 """
     radiosity(m::UniformSky, sky::SkySectors, Idif::SVector{nw, Float64}) where nw
 
-Calculate the radiosity of each section of `sky` given diffuse irradiance on the
-horizontal plane (`Idif` with `nw` wavebands) assuming a Uniform Sky model. See
-package documentation for details.
+Calculate the radiosity of each section of `sky` on the horizontal plane given diffuse
+irradiance on the horizontal plane (`Idif` with `nw` wavebands) assuming a Uniform Sky model.
+See package documentation for details.
 """
 function radiosity(m::UniformSky,
     sky::SkySectors,
     Idif::SVector{nw, Float64} = SVector{1, Float64}(1.0)) where {nw}
+    # Equation 15
     I = SVector{nw, Float64}[(t = (s.Φᵤ - s.Φₗ) * (cos(s.θₗ)^2 - cos(s.θᵤ)^2) / 2 / π;
-    SVector{nw, Float64}(t .* Idif[i] for i in 1:nw)) for s in sky]
+                              SVector{nw, Float64}(t .* Idif[i] for i in 1:nw)) for s in sky]
     SkyDome(sky, I)
 end
 
@@ -286,15 +287,16 @@ struct StandardSky <: RadianceDistribution
 end
 
 """
-    radiosity(m::StandardSky, sky::SkySectors, ::Type{Val{nw}} = Val{1})
+    radiosity(m::StandardSky, sky::SkySectors, Idif::SVector{nw, Float64})
 
-Calculate the radiosity of each section of `sky` normalized by diffuse radiance
-on the horizontal plane assuming a Standard Sky model and for `nw`
-wavebands. See package documentation for details.
+Calculate the radiosity of each section of `sky` on the horizontal plane given diffuse
+irradiance on the horizontal plane (`Idif` with `nw` wavebands) assuming a Standard Sky
+model and for `nw` wavebands. See package documentation for details.
 """
 function radiosity(m::StandardSky,
     sky::SkySectors,
     Idif::SVector{nw, Float64} = SVector{1, Float64}(1.0)) where {nw}
+    # Equation 22
     I = SVector{nw, Float64}[(t = (s.Φᵤ - s.Φₗ) * ((4cos(s.θₗ) + 3) * cos(s.θₗ)^2 -
                                    (4cos(s.θᵤ) + 3) * cos(s.θᵤ)^2) / 14 / π;
     SVector{nw, Float64}(t .* Idif[i] for i in 1:nw)) for s in sky]
@@ -323,7 +325,7 @@ end
     CIE(;type = 1, θₛ = 0.0, Φₛ = 0.0, rtol = sqrt(eps(Float64)), atol = 0.0,
 maxevals = typemax(Int))
 
-Create a standard CIE model of sky diffuse radiance as described by
+Create a standard CIE model of sky diffuse radiance on the horizontal plane as described by
 Darula and Kittler (2002). The argument `type` can have values from 1 to 15
 representing the 15 standard CIE models. θₛ and Φₛ are the zenith and azimuth
 angles of the solar disc. `rtol` and `atol` and `maxevals` are the relative
@@ -393,7 +395,7 @@ function radiance(m::CIE, θ, Φ)
     fCIE(m.a, m.b, m.c, m.d, m.e, θ, γₛ) / m.denom
 end
 
-# Radiosity for a sector of the sky normalized by horizontal irradiance
+# Radiosity for a sector of the sky on horizontal plane normalized by horizontal irradiance
 function radiosity(m::CIE, sky::SkySectors,
     Idif::SVector{nw, Float64} = SVector{1, Float64}(1.0);
     rtol = sqrt(eps(Float64)), atol = 0.0, maxevals = typemax(Int)) where {nw}

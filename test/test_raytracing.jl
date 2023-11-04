@@ -39,7 +39,7 @@ let
         dome_method = equal_solid_angles, ntheta = 9, nphi = 12)
 
     # 4. Create a ray tracing object with the sky dome as the light sources
-    settings = RTSettings(nx = 3, ny = 3, dx = 2.0, dy = 1.0, parallel = true)
+    settings = RTSettings(nx = 10, ny = 10, dx = 2.0, dy = 1.0, parallel = true)
     rtobj = RayTracer(scene, sources, settings = settings)
 
     # 5. Run the ray tracer!
