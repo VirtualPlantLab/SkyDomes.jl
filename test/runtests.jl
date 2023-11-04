@@ -25,3 +25,6 @@ end
 @testset "Ray tracing" begin
     include("test_raytracing.jl")
 end
+@testset "Ray tracing tiles" begin
+    include("test_raytracer_tiles.jl")
+end
