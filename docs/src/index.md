@@ -1,18 +1,32 @@
 
-# Module SkyDomes
+# SkyDomes.jl
 
 ```@meta
 CurrentModule = SkyDomes
 ```
 
-```@docs
-UniformSky
-StandardSky
-CIE
-radiosity
-equal_solid_angles
-equal_angle_intervals
-sky
-clear_sky
-waveband_conversion
+## Index
+
+```@index
+Modules = [SkyDomes]
+Public = true
+Private = true
+```
+
+## API documentation
+
+```@autodocs
+Modules = [SkyDomes]
+Public = true
+Private = false
+```
+
+## Un-exported
+
+Private functions, types or constants from `SkyDomes`. These are not exported, so you need to prefix the function name with `SkyDomes.` to access them:
+
+```@autodocs
+Modules = [SkyDomes]
+Public = false
+Private = true
 ```
