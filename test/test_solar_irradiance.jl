@@ -9,13 +9,15 @@ let
     DOYs = rand(1:365, n)
     decs = SkyDomes.declination.(DOYs)
     ts = 24.0 .* rand(n)
-    temp = [SkyDomes.solar_zenith_angle(lat = lats[i], dec = decs[i], t = ts[i])
+    temp = [SkyDomes.solar_angles(lat = lats[i], dec = decs[i], t = ts[i])
             for i in 1:n]
-    cos_theta, theta = Tuple(getindex.(temp, i) for i in 1:2)
+    cos_theta, theta, phi = Tuple(getindex.(temp, i) for i in 1:3)
     @test maximum(theta) <= π
     @test minimum(theta) >= 0
     @test maximum(cos_theta) <= 1.0
     @test minimum(cos_theta) >= -1.0
+    @test maximum(phi) <= 2π
+    @test minimum(phi) >= 0
 
     # Compute air mass for the different cos_theta and theta from above
     thetas = 0.0:0.01:(π / 2)
@@ -46,4 +48,17 @@ let
             end
         end
     end
+
+    # Check that zenith angles are calculated correctly
+    lat = 0.0*pi/180
+    DOY = 182
+    dec = SkyDomes.declination(DOY)
+    ts = 0.1:0.1:24.0
+    temp = [SkyDomes.solar_angles(lat = lat, dec = dec, t = t)
+            for t in ts]
+    cos_thetas, thetas, phis = Tuple(getindex.(temp, i) for i in 1:3)
+    day = cos_thetas .> 0
+    # plot(ts[day], theta[day].*180.0./pi)
+    # plot!(ts[day], phis[day].*180.0./pi)
+
 end

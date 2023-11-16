@@ -13,12 +13,16 @@ This code is based on:
 # Calculate the declination angle
 declination(DOY) = 23.45 * π / 180.0 * sin(2π / 365 * (DOY - 81))
 
-# Calculate the solar zenith angle and its cosine at a given location and time.
-function solar_zenith_angle(; lat, t, dec)
+# Calculate the solar zenith and azimuth angle and its cosine at a given location and time.
+function solar_angles(; lat, t, dec)
     h = (t - 12.0) * 15.0 * π / 180.0 # hour angle of the sun
     cos_theta = cos(lat) * cos(dec) * cos(h) + sin(lat) * sin(dec) # cosine of zenith angle
     theta = acos(cos_theta) # zenith angle
-    return (cos_theta, theta) # return both values as a tuple
+    # cosine of azimuth angle for each half of the day
+    cos_phi = (sin(dec)*cos(lat) - cos(h)*cos(dec)*sin(lat))/sin(theta)
+    phi = acos(clamp(cos_phi, -1, 1)) # azimuth angle without correction
+    phi = h < 0 ? phi : 2π - phi # compass azimuth angle with correction
+    return (cos_theta, theta, phi) # return both values as a tuple
 end
 
 #=
@@ -72,6 +76,7 @@ A named tuple with fields:
 - `Idir`: direct solar radiation on the horizontal plane in W/m^2
 - `Idif`: diffuse solar radiation on the horizontal plane in W/m^2
 - `theta`: solar zenith angle in radians
+- `phi`: solar azimuth angle in radians
 
 # References
 Ineichen P., Perez R., A new airmass independent formulation for
@@ -87,7 +92,7 @@ function clear_sky(; lat, DOY, f, altitude = 0.0, TL = 4.0)
     dec = declination(DOY) # declination angle of the sun
     DL = day_length(lat, dec)
     t = timeOfDay(f, DL)
-    cos_theta, theta = solar_zenith_angle(; lat = lat, dec = dec, t = t)
+    cos_theta, theta, phi = solar_angles(; lat = lat, dec = dec, t = t)
     # Clear sky model by Ineichen and Perez (2002)
     am = air_mass(cos_theta, theta)
     fh1 = exp(-altitude / 8000)
@@ -99,7 +104,7 @@ function clear_sky(; lat, DOY, f, altitude = 0.0, TL = 4.0)
     # Direct solar radiation on the horizontal plane
     b = 0.664 + 0.163 / fh1
     Idir = Io * cos_theta * b * exp(-0.09 * am * (TL - 1))
-    return (Ig = Ig, Idir = Idir, Idif = Ig - Idir)
+    return (Ig = Ig, Idir = Idir, Idif = Ig - Idir, theta = theta, phi = phi)
 end
 
 # Convert solar irradiance to a particular waveband based on a reference solar

@@ -20,7 +20,7 @@ let
     lat = 52.0 * π / 180.0
     DOY = 182
     f = 0.5
-    Ig, Idir, Idif = SkyDomes.clear_sky(lat = lat, DOY = DOY, f = f)
+    Ig, Idir, Idif, theta = SkyDomes.clear_sky(lat = lat, DOY = DOY, f = f)
 
     # 2. Convert to different wavebands (PAR, NIR, UV, red, green, blue)
     Idir_PAR = SkyDomes.waveband_conversion(Itype = :direct,
@@ -34,7 +34,7 @@ let
 
     # 3. Create a sky dome of directional light sources using the solar irradiance
     sources = SkyDomes.sky(scene, Idir = (Idir_PAR, Idir_PAR), Idif = (Idif_PAR, Idif_PAR),
-        nrays_dif = 10_000_000, nrays_dir = 1_000_000,
+        nrays_dif = 10_000_000, nrays_dir = 1_000_000, theta_dir = theta,
         sky_model = StandardSky,
         dome_method = equal_solid_angles, ntheta = 9, nphi = 12)
 

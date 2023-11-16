@@ -45,7 +45,7 @@ using SkyDomes
 lat = 52.0*π/180.0 # latitude in radians
 DOY = 182
 f = 0.5 # solar noon
-Ig, Idir, Idif = clear_sky(lat = lat, DOY = DOY, f = f) # W/m2
+Ig, Idir, Idif, theta, phi = clear_sky(lat = lat, DOY = DOY, f = f) # W/m2
 ```
 
 The values `Ig`, `Idir` and `Idif` are the total, direct and diffuse solar
@@ -95,12 +95,15 @@ that purpose:
 sources = sky(scene,
              Idir = Idir_PAR, # Direct solar radiation from above
              nrays_dir = 1_000_000, # Number of rays for direct solar radiation
+             theta_dir = theta, # Solar zenith angle for direct solar radiation
+             phi_dir = phi, # Solar azimuth angle for direct solar radiation
              Idif = Idif_PAR, # Diffuse solar radiation from above
              nrays_dif = 10_000_000, # Total number of rays for diffuse solar radiation
              sky_model = StandardSky, # Angular distribution of solar radiation
              dome_method = equal_solid_angles, # Discretization of the SkyDomes dome
              ntheta = 9, # Number of discretization steps in the zenith angle
              nphi = 12) # Number of discretization steps in the azimuth angle
+render!(sources) # To visualize the dome of light sources
 ```
 
 The function takes the scene as input to ensure that light sources scale with
