@@ -42,7 +42,7 @@ let
     function PGT.feed!(turtle::PGT.Turtle, tile::Tiles.Tile{N, M}, data) where {N, M}
         for _ in 1:N
             PGP.Rectangle!(turtle, length = tile.length / N, width = tile.length,
-                material = tile.mat[1], color = rand(RGB), move = true)
+                materials = tile.mat[1], colors = rand(RGB), move = true)
         end
         return nothing
     end
@@ -328,7 +328,7 @@ let
     scene = PGP.Scene(graph1)
     scene_extra = PGP.Scene(graph2)
     mat = PRT.Sensor(2)
-    PGP.add!(scene, mesh = scene_extra.mesh, material = mat, color = rand(RGB))
+    PGP.add!(scene, mesh = scene_extra.mesh, materials = mat, colors = rand(RGB))
     #PV.render(scene)
 
     # Naive + Serial

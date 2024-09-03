@@ -14,7 +14,7 @@ let
     translate!(r2, Vec(0.0, 0.0, -1.0))
     materials = [Black(2), Black(2)]
     ids = [1, 1, 2, 2]
-    scene = Scene(mesh = Mesh([r, r2]), material_ids = ids, materials = materials)
+    scene = Scene(mesh = Mesh([r, r2]), materials = materials[ids])
 
     # 1. Generate the solar irradiance at a specific moment in time
     lat = 52.0 * π / 180.0
