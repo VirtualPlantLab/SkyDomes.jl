@@ -10,8 +10,7 @@ using DataFrames
 using HCubature
 import StaticArrays as SA
 import StaticArrays: SVector
-import PlantGeomPrimitives: Vec
-import PlantRayTracer: DirectionalSource, O
+import PlantRayTracer: DirectionalSource
 
 include("Sources.jl")
 include("SolarIrradiance.jl")
