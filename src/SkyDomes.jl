@@ -3,7 +3,7 @@ module SkyDomes
 import Base: getindex, lastindex, length, iterate
 
 export UniformSky, StandardSky, CIE, radiosity,
-    equal_solid_angles, equal_angle_intervals, sky, clear_sky,
+    equal_solid_angles, equal_angle_intervals, sky, clear_sky, cloudy_sky,
     waveband_conversion, day_length, declination
 
 using DataFrames

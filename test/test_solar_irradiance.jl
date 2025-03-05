@@ -1,7 +1,7 @@
 using SkyDomes
 using Test
 
-let
+#let
 
     # Check that zenith angles are calculated correctly
     n = 1000
@@ -37,6 +37,32 @@ let
     @test all(abs.(Igs .- Idifs) .>= eps(Float64))
     @test all(Igs .≈ Idirs .+ Idifs)
 
+    # Calculate solar radiation and components for a cloudy sky (assume 20% reduction in Ig)
+    Igsc = Igs.*0.8
+    x = 0.01:0.01:0.99
+    temp = [SkyDomes.cloudy_sky.(Igsc[i], lat = π / 4, DOY = 182, f = x[i]) for i in eachindex(x)]
+    Igsca, Idirsc, Idifsc = Tuple(getindex.(temp, i) for i in 1:3)
+    @test all(Igsca .== Igsc)
+    @test minimum(Igsc) > eps(Float64)
+    @test all(abs.(Igsc .- Idirsc) .>= eps(Float64))
+    @test all(abs.(Igsc .- Idifsc) .>= zero(Float64))
+    @test all(Igsc .≈ Idirsc .+ Idifsc)
+    @test all((Idifsc .- Idifs) .>= -0.5) # clear sky model can lead to slightly higher dif
+    @test all((Idirsc .- Idirs) .<= 0.0)
+
+    # Calculate solar radiation and components for a cloudy sky (assume 50% reduction in Ig)
+    Igsc = Igs.*0.5
+    x = 0.01:0.01:0.99
+    temp = [SkyDomes.cloudy_sky.(Igsc[i], lat = π / 4, DOY = 182, f = x[i]) for i in eachindex(x)]
+    Igsca, Idirsc, Idifsc = Tuple(getindex.(temp, i) for i in 1:3)
+    @test all(Igsca .== Igsc)
+    @test minimum(Igsc) > eps(Float64)
+    @test all(abs.(Igsc .- Idirsc) .>= eps(Float64))
+    @test all(abs.(Igsc .- Idifsc) .>= zero(Float64))
+    @test all(Igsc .≈ Idirsc .+ Idifsc)
+    @test all((Idifsc .- Idifs) .>= -4.7) # clear sky model can lead to slightly higher dif
+    @test all((Idirsc .- Idirs) .<= 0.0)
+
     # Test waveband conversion coefficients
     for Itype in (:direct, :diffuse)
         for waveband in (:PAR, :NIR, :UV, :red, :green, :blue)
@@ -61,4 +87,4 @@ let
     # plot(ts[day], theta[day].*180.0./pi)
     # plot!(ts[day], phis[day].*180.0./pi)
 
-end
+#end

@@ -107,6 +107,71 @@ function clear_sky(; lat, DOY, f, altitude = 0.0, TL = 4.0)
     return (Ig = Ig, Idir = Idir, Idif = Ig - Idir, theta = theta, phi = phi)
 end
 
+
+
+"""
+    cloudy_sky(Ig; lat, DOY, f)
+
+Calculate global, direct and diffuse solar radiation on the horizontal plane using
+the cloudy sky model by Spitters et al (1986) for instantaneous (not daily) measurements.
+
+# Details
+
+The equations to compute the fraction of incoming radiation that is diffuse were originally
+developed for hourly solar radiation levels.
+
+# Arguments
+- `Ig`: Observed global solar radiation on the horizontal plane in W/m^2
+- `lat`: latitude in radians
+- `DOY`: day of year
+- `f`: fraction of the day (0 = sunrise, 1 = sunset)
+
+# Returns
+A named tuple with fields:
+- `Ig`: global solar radiation on the horizontal plane in W/m^2
+- `Idir`: direct solar radiation on the horizontal plane in W/m^2
+- `Idif`: diffuse solar radiation on the horizontal plane in W/m^2
+- `theta`: solar zenith angle in radians
+- `phi`: solar azimuth angle in radians
+
+# References
+Spitters CJ, Toussaint HA, Goudriaan J. Separating the diffuse and direct component of
+global radiation and its implications for modeling canopy photosynthesis Part I. Components
+of incoming radiation. Agricultural and Forest Meteorology Vol 38(1-3), pp. 217-29, 1986.
+"""
+function cloudy_sky(Ig; lat, DOY, f)
+    # Check validity of inputs
+    @assert abs(lat) <= pi / 2
+    @assert 0.0 <= f <= 1.0
+    @assert 0 < DOY <= 365
+    @assert Ig > 0.0
+    # Basic astronomical quantities
+    Io = extraterrestrial(DOY)
+    dec = declination(DOY) # declination angle of the sun
+    DL = day_length(lat, dec)
+    t = timeOfDay(f, DL)
+    # Solar elevation angle
+    _, theta, phi = solar_angles(; lat = lat, dec = dec, t = t)
+    beta = π/2 - theta
+    # Calculate Ig/Io
+    IgIo =  ifelse(beta == 0.0, 0.0, min(1.0, Ig/Io/sin(beta)))
+    # Compute Idf/Ig according to equation in Appendix at Spitters et al. (1986)
+    R = 0.847 - 1.61*sin(beta) + 1.04*sin(beta)^2
+    K = (1.47 - R)/1.66
+    if IgIo <= 0.22
+        IdfIg = 1.0
+    elseif IgIo <= 0.35
+        IdfIg = 1.0 - 6.4*(IgIo - 0.22)^2
+    elseif IgIo <= K
+        IdfIg = 1.47 - 1.66*IgIo
+    else
+        IdfIg = R
+    end
+    Idif = Ig*IdfIg
+    Idir = Ig - Idif
+    return (Ig = Ig, Idir = Idir, Idif = Idif, theta = theta, phi = phi)
+end
+
 # Convert solar irradiance to a particular waveband based on a reference solar
 # spectrum for direct and diffuse solar using the Bird model. The calculations
 # are included in chapter 4 of the PhD Thesis by Alejandro Morales.
