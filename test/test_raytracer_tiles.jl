@@ -52,26 +52,18 @@ let
     psettings = PRT.RTSettings(pkill = 0.3, maxiter = 1, nx = 3, ny = 3, parallel = true)
 
     # Create the ray tracing scene and run it
-    function ray_trace!(scene,
-        settings,
-        acceleration = PRT.Naive;
-        radiosity = 0.0,
-        nrays = 1000)
-        source = SkyDomes.sky(scene, Idir = 0.0, Idif = radiosity, nrays_dif = nrays,
+    function ray_trace!(scene, settings, acceleration = PRT.Naive; radiosity = 0.0,
+                        nrays = 1000)
+        if acceleration == PRT.Naive
+            acc_mesh = accelerate(scene, settings = settings, acceleration = acceleration)
+        else
+            acc_mesh = accelerate(scene, settings = settings, acceleration = acceleration,
+                                  rule = PRT.SAH{1}(2, 5))
+        end
+        source = SkyDomes.sky(acc_mesh, Idir = 0.0, Idif = radiosity, nrays_dif = nrays,
                                nrays_dir = 0, sky_model = StandardSky,
                                dome_method = equal_solid_angles, ntheta = 9, nphi = 12)
-        if acceleration == PRT.Naive
-            rtobj = PRT.RayTracer(scene,
-                source,
-                settings = settings,
-                acceleration = acceleration)
-        else
-            rtobj = PRT.RayTracer(scene,
-                source,
-                settings = settings,
-                acceleration = PRT.BVH,
-                rule = PRT.SAH{1}(2, 5))
-        end
+        rtobj = PRT.RayTracer(acc_mesh, source)
         nrays = PRT.trace!(rtobj)
         return nothing
     end
