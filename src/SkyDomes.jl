@@ -4,7 +4,7 @@ import Base: getindex, lastindex, length, iterate
 
 export UniformSky, StandardSky, CIE, radiosity,
     equal_solid_angles, equal_angle_intervals, sky, clear_sky, cloudy_sky,
-    waveband_conversion, day_length, declination
+    waveband_conversion, day_length, declination, daily_radiation
 
 using DataFrames
 using HCubature

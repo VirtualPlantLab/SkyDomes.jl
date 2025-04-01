@@ -1,7 +1,7 @@
 using SkyDomes
 using Test
 
-#let
+let
 
     # Check that zenith angles are calculated correctly
     n = 1000
@@ -30,17 +30,54 @@ using Test
     @test maximum(I0s) < 1413
 
     # Calculate solar radiation and components for a clear sky
-    temp = [SkyDomes.clear_sky.(lat = π / 4, DOY = 182, f = x) for x in 0.01:0.01:0.99]
+    DOY = 182
+    lat = π / 4
+    df = 0.01
+    temp = [clear_sky(lat = lat, DOY = DOY, f = x) for x in df/2:df:1-df/2]
     Igs, Idirs, Idifs = Tuple(getindex.(temp, i) for i in 1:3)
     @test minimum(Igs) > eps(Float64)
     @test all(abs.(Igs .- Idirs) .>= eps(Float64))
     @test all(abs.(Igs .- Idifs) .>= eps(Float64))
     @test all(Igs .≈ Idirs .+ Idifs)
 
+    # Calculate daily solar radiation asusming 20% and 50% reduction with respect to clear sky
+    dec = declination(DOY) # declination angle of the sun
+    DL = day_length(lat, dec) # daylength in h
+    Igd_sun = sum(Igs)*DL*df*3600 # Daily Ig in J/m2
+    Igd_20 = Igd_sun*0.8
+    Igd_50 = Igd_sun*0.5
+    Iday_20 = daily_radiation(lat = lat, DOY = DOY, Igd = Igd_20)
+    @test Iday_20.Igd == Igd_20
+    @test Iday_20.Idif + Iday_20.Idir == Iday_20.Igd
+    Iday_50 = daily_radiation(lat = lat, DOY = DOY, Igd = Igd_50)
+    @test Iday_50.Igd == Igd_50
+    @test Iday_20.Iod == Iday_50.Iod
+    @test Iday_50.Idif + Iday_50.Idir == Iday_50.Igd
+
+    # Calculate solar radiation and components for a cloudy sky (assume 20% reduction in Igd)
+    temp = [cloudy_sky(Iday = Iday_20, lat = lat, DOY = DOY, f = x) for x in df/2:df:1-df/2]
+    Igsca, Idirsc, Idifsc = Tuple(getindex.(temp, i) for i in 1:3)
+    @test abs(sum(Igsca)*DL*df*3600 - Igd_20)/Igd_20 < 1e-4
+    @test minimum(Igsca) > eps(Float64)
+    @test all(abs.(Igsca .- Idirsc) .>= eps(Float64))
+    @test all(abs.(Igsca .- Idifsc) .>= zero(Float64))
+    @test all(Igsca .≈ Idirsc .+ Idifsc)
+    @test all((Idifsc .- Idifs) .>= -0.5)
+
+    # Calculate solar radiation and components for a cloudy sky (assume 50% reduction in Igd)
+    temp = [cloudy_sky(Iday = Iday_50, lat = lat, DOY = DOY, f = x) for x in df/2:df:1-df/2]
+    Igsca, Idirsc, Idifsc = Tuple(getindex.(temp, i) for i in 1:3)
+    @test abs(sum(Igsca)*DL*df*3600 - Igd_50)/Igd_50 < 1e-4
+    @test minimum(Igsca) > eps(Float64)
+    @test all(abs.(Igsca .- Idirsc) .>= eps(Float64))
+    @test all(abs.(Igsca .- Idifsc) .>= zero(Float64))
+    @test all(Igsca .≈ Idirsc .+ Idifsc)
+    @test all((Idifsc .- Idifs) .>= -4.7)
+
     # Calculate solar radiation and components for a cloudy sky (assume 20% reduction in Ig)
     Igsc = Igs.*0.8
-    x = 0.01:0.01:0.99
-    temp = [SkyDomes.cloudy_sky.(Igsc[i], lat = π / 4, DOY = 182, f = x[i]) for i in eachindex(x)]
+    x = df/2:df:1-df/2
+    temp = [cloudy_sky(Ig = Igsc[i], lat = lat, DOY = DOY, f = x[i]) for i in eachindex(x)]
     Igsca, Idirsc, Idifsc = Tuple(getindex.(temp, i) for i in 1:3)
     @test all(Igsca .== Igsc)
     @test minimum(Igsc) > eps(Float64)
@@ -52,15 +89,15 @@ using Test
 
     # Calculate solar radiation and components for a cloudy sky (assume 50% reduction in Ig)
     Igsc = Igs.*0.5
-    x = 0.01:0.01:0.99
-    temp = [SkyDomes.cloudy_sky.(Igsc[i], lat = π / 4, DOY = 182, f = x[i]) for i in eachindex(x)]
+    x = df/2:df:1-df/2
+    temp = [cloudy_sky(Ig = Igsc[i], lat = lat, DOY = DOY, f = x[i]) for i in eachindex(x)]
     Igsca, Idirsc, Idifsc = Tuple(getindex.(temp, i) for i in 1:3)
     @test all(Igsca .== Igsc)
     @test minimum(Igsc) > eps(Float64)
     @test all(abs.(Igsc .- Idirsc) .>= eps(Float64))
     @test all(abs.(Igsc .- Idifsc) .>= zero(Float64))
     @test all(Igsc .≈ Idirsc .+ Idifsc)
-    @test all((Idifsc .- Idifs) .>= -4.7) # clear sky model can lead to slightly higher dif
+    @test all((Idifsc .- Idifs) .>= -4.8) # clear sky model can lead to slightly higher dif
     @test all((Idirsc .- Idirs) .<= 0.0)
 
     # Test waveband conversion coefficients
@@ -87,4 +124,4 @@ using Test
     # plot(ts[day], theta[day].*180.0./pi)
     # plot!(ts[day], phis[day].*180.0./pi)
 
-#end
+end

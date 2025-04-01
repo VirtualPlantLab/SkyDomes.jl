@@ -1,13 +1,16 @@
 ### This file contains public API ###
 # waveband_conversion
 # clear_sky
+# cloudy_sky
 
 #=
-This code is based on:
+For clear skies this code is based on:
 - report SAND2012-2389 on "Global Horizontal Irradiance Clear Sky Models: Implementation and Analysis".
     - To compute solar angles
 - Ineichen and Perez (2002)
     - To compute direct and diffuse solar radiation throughout the day
+For cloudy skies this code is based on:
+- Spitters et al. (1986)
 =#
 
 # Calculate the declination angle
@@ -38,7 +41,7 @@ function air_mass(cos_theta, theta)
     1.0 / (cos_theta + 0.50572 * (96.07995 - theta * 180 / pi)^(-1.6354))
 end
 
-# Calculate the length of the diurnal part of a day based on latitude and declination angle
+# Calculate the length of the diurnal part of a day (h) based on latitude and declination angle
 function day_length(lat, dec)
     # Calculate sunset angle with respect to solar noon, including corrections for extreme latitudes
     cosSunset = -tan(lat) * tan(dec)
@@ -108,20 +111,83 @@ function clear_sky(; lat, DOY, f, altitude = 0.0, TL = 4.0)
 end
 
 
+"""
+    daily_radiation(; lat, DOY, Igd = nothing)
+
+Calculate extraterrestrial, global, direct and diffuse solar radiation on the horizontal
+plane on a daily basis. If observed values of global solar radiation are observed (`Igd`) the
+equations by Spitters et al (1986) will be used to compute the partitioning between
+diffuse and direct solar radiation. If not provided, it will be assume that `Igd` is 75%
+of the extraterrestrial solar radiationa and that 23% of the global radiation is diffuse
+(this corresponds to a clear sky).
+
+# Arguments
+- `lat`: latitude in radians
+- `DOY`: day of year
+- `Igd`: Observed daily global solar radiation on the horizontal plane in J/m^2 (NOT MJ/m2)
+
+# Returns
+A named tuple with fields:
+- `Iod`: daily extraterestrial solar radiation on the horizontal plane in J/m^2
+- `Igd`: daily global solar radiation on the horizontal plane in J/m^2
+- `Idir`: daily direct solar radiation on the horizontal plane in J/m^2
+- `Idif`: daily diffuse solar radiation on the horizontal plane in J/m^2
+
+# References
+Spitters CJ, Toussaint HA, Goudriaan J. Separating the diffuse and direct component of
+global radiation and its implications for modeling canopy photosynthesis Part I. Components
+of incoming radiation. Agricultural and Forest Meteorology Vol 38(1-3), pp. 217-29, 1986.
+"""
+function daily_radiation(;lat, DOY, Igd = nothing)
+    @assert abs(lat) <= pi / 2
+    @assert 0 < DOY <= 365
+    # Basic astronomical quantities
+    dec = declination(DOY) # declination angle of the sun
+    DL = day_length(lat, dec)
+    # Integration of sin(beta) over the day in s -> Eq 18 by Spitters et al (1986)
+    int = 3600*(DL*sin(lat)*sin(dec) + (24/pi)*cos(lat)*cos(dec)*sqrt(1 - tan(lat)^2*tan(dec)^2))
+    # Extraterrestial solar radiation
+    Iod = extraterrestrial(DOY)*int
+    # Clear sky
+    if isnothing(Igd)
+        Igd = 0.75*Iod
+        Idif = 0.23*Igd
+    else
+        tau = Igd/Iod
+        if tau >= 0.75
+            fdif = 0.23
+        elseif tau > 0.35
+            fdif = 1.33 - 1.46tau
+        elseif tau > 0.07
+            fdif = 1 - 2.3*(tau - 0.07)^2
+        else
+            fdif = 1
+        end
+        Idif = fdif*Igd
+    end
+    Idir = Igd - Idif
+    return (Iod = Iod, Igd = Igd, Idif = Idif, Idir = Idir)
+end
+
 
 """
-    cloudy_sky(Ig; lat, DOY, f)
+    cloudy_sky(; Ig, Iday, lat, DOY, f)
 
 Calculate global, direct and diffuse solar radiation on the horizontal plane using
-the cloudy sky model by Spitters et al (1986) for instantaneous (not daily) measurements.
+the cloudy sky model by Spitters et al (1986) using either observed values of solar
+radiation (Ig, not on a daily scale) or a named tuple with daily radiation values (see
+`daily radiation()`).
 
 # Details
 
-The equations to compute the fraction of incoming radiation that is diffuse were originally
-developed for hourly solar radiation levels.
+When using `Ig`` as input, the equations to compute the fraction of incoming radiation that
+is diffuse were originally developed for hourly solar radiation levels. When using `Iday` the
+assumption is that the relative temporal patterns for the different forms of solar radiation
+(total, diffuse or extraterrestrial) are the same.
 
 # Arguments
 - `Ig`: Observed global solar radiation on the horizontal plane in W/m^2
+- `Iday`: Named tuple with daily radiation values
 - `lat`: latitude in radians
 - `DOY`: day of year
 - `f`: fraction of the day (0 = sunrise, 1 = sunset)
@@ -139,12 +205,12 @@ Spitters CJ, Toussaint HA, Goudriaan J. Separating the diffuse and direct compon
 global radiation and its implications for modeling canopy photosynthesis Part I. Components
 of incoming radiation. Agricultural and Forest Meteorology Vol 38(1-3), pp. 217-29, 1986.
 """
-function cloudy_sky(Ig; lat, DOY, f)
+function cloudy_sky(;Ig = nothing, Iday = nothing, lat, DOY, f)
     # Check validity of inputs
     @assert abs(lat) <= pi / 2
     @assert 0.0 <= f <= 1.0
     @assert 0 < DOY <= 365
-    @assert Ig > 0.0
+    @assert !isnothing(Ig) || !isnothing(Iday)
     # Basic astronomical quantities
     Io = extraterrestrial(DOY)
     dec = declination(DOY) # declination angle of the sun
@@ -153,23 +219,30 @@ function cloudy_sky(Ig; lat, DOY, f)
     # Solar elevation angle
     _, theta, phi = solar_angles(; lat = lat, dec = dec, t = t)
     beta = π/2 - theta
-    # Calculate Ig/Io
-    IgIo =  ifelse(beta == 0.0, 0.0, min(1.0, Ig/Io/sin(beta)))
-    # Compute Idf/Ig according to equation in Appendix at Spitters et al. (1986)
-    R = 0.847 - 1.61*sin(beta) + 1.04*sin(beta)^2
-    K = (1.47 - R)/1.66
-    if IgIo <= 0.22
-        IdfIg = 1.0
-    elseif IgIo <= 0.35
-        IdfIg = 1.0 - 6.4*(IgIo - 0.22)^2
-    elseif IgIo <= K
-        IdfIg = 1.47 - 1.66*IgIo
+    if isnothing(Ig) && !isnothing(Iday)
+        ft = Io*cos(theta)/Iday.Iod
+        Ig = ft*Iday.Igd
+        Idif = ft*Iday.Idif
+    elseif !isnothing(Ig)
+        # Calculate Ig/Io
+        IgIo =  ifelse(beta == 0.0, 0.0, min(1.0, Ig/Io/sin(beta)))
+        # Compute Idf/Ig according to equation in Appendix at Spitters et al. (1986)
+        R = 0.847 - 1.61*sin(beta) + 1.04*sin(beta)^2
+        K = (1.47 - R)/1.66
+        if IgIo <= 0.22
+            IdfIg = 1.0
+        elseif IgIo <= 0.35
+            IdfIg = 1.0 - 6.4*(IgIo - 0.22)^2
+        elseif IgIo <= K
+            IdfIg = 1.47 - 1.66*IgIo
+        else
+            IdfIg = R
+        end
+        Idif = Ig*IdfIg
     else
-        IdfIg = R
+        error("Only assign a value to either Ig or Iday, not both.")
     end
-    Idif = Ig*IdfIg
-    Idir = Ig - Idif
-    return (Ig = Ig, Idir = Idir, Idif = Idif, theta = theta, phi = phi)
+    return (Ig = Ig, Idir = Ig - Idif, Idif = Idif, theta = theta, phi = phi)
 end
 
 # Convert solar irradiance to a particular waveband based on a reference solar
