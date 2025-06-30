@@ -207,9 +207,9 @@ function sky(mesh::AccMesh;
     nphi = 12,
     kwargs...)
     # Ensure valid inputs
-    @assert all(Idir .>= 0.0)
-    @assert all(Idif .>= 0.0)
-    @assert mesh.grid.nleaves > 1 "The scene must include clones in the x and y directions"
+    any(Idir .< 0.0) && @warn "Idir should be non-negative. Proceed at your own risk."
+    any(Idif .< 0.0) && @warn "Idif should be non-negative. Proceed at your own risk."
+    mesh.grid.nleaves <= 1 && @warn "The scene should include clones in the x and y directions when using Sky domes. Proceed at your own risk."
     # To avoid multiple repetitions
     has_diffuse = false
     has_direct = false
