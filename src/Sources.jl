@@ -19,10 +19,27 @@ abstract type RadianceDistribution end
 ############################ SkySectors Object #################################
 ################################################################################
 
-#=
-    Object containing the output of every discretization method and convenience
+#=    
+Object containing the output of every discretization method and convenience
 methods to work with it as a collection of values.
+
 =#
+
+"""
+    SkySectors
+
+Data structure that contain the zenith and azimuth angles of the lower and upper
+bounds of each sector of the sky dome. The angles are stored in radians.
+See package documentation for details.
+
+This type is immutable.
+
+## Fields:
+- `θₗ`: Vector of lower zenith angles (in radians) for each sector.
+- `θᵤ`: Vector of upper zenith angles (in radians) for each sector.
+- `Φₗ`: Vector of lower azimuth angles (in radians) for each sector.
+- `Φᵤ`: Vector of upper azimuth angles (in radians) for each sector.
+"""
 struct SkySectors{T}
     θₗ::Vector{T}
     θᵤ::Vector{T}
@@ -30,11 +47,66 @@ struct SkySectors{T}
     Φᵤ::Vector{T}
 end
 
+"""
+    getindex(s::SkySectors, i::Int)
+
+Get the lower and upper zenith and azimuth angles of the `i`-th sector in the SkySectors object.
+See package documentation for details.
+
+## Arguments
+- `s`: An instance of `SkySectors`.
+- `i`: An integer index of the sector.
+
+## Returns
+A tuple containing the lower zenith angle (`θₗ`), upper zenith angle (`θᵤ`),
+lower azimuth angle (`Φₗ`), and upper azimuth angle (`Φᵤ`) of the `i`-th sector.
+"""
 function getindex(s::SkySectors, i::Int)
     (θₗ = s.θₗ[i], θᵤ = s.θᵤ[i], Φₗ = s.Φₗ[i], Φᵤ = s.Φᵤ[i])
 end
+
+"""
+    length(s::SkySectors)
+
+Get the number of sectors in the SkySectors object.
+See package documentation for details.
+
+## Arguments
+- `s`: An instance of `SkySectors`.
+
+## Returns
+The number of sectors in the SkySectors object.
+"""
 length(s::SkySectors) = length(s.θₗ)
+
+"""
+    lastindex(s::SkySectors)
+
+Get the last index of the sectors in the SkySectors object.
+See package documentation for details.
+
+## Arguments
+- `s`: An instance of `SkySectors`.
+
+## Returns
+The last index of the sectors in the SkySectors object.
+"""
 lastindex(s::SkySectors) = length(s)
+
+"""
+    iterate(s::SkySectors, state = 1)
+
+Iterate over the sectors in the SkySectors object.
+See package documentation for details.
+
+## Arguments
+- `s`: An instance of `SkySectors`.
+- `state`: The current state of the iteration (default is 1).
+
+## Returns
+A tuple containing the sector data and the next state, or `nothing` if the
+end of the sectors is reached.
+"""
 iterate(s::SkySectors, state = 1) = state > length(s) ? nothing : (s[state], state + 1)
 
 ################################################################################
@@ -46,7 +118,14 @@ iterate(s::SkySectors, state = 1) = state > length(s) ? nothing : (s[state], sta
 
 Discretize the sky into `ntheta` zenith rings of `nphi` sectors each assuming
 the same angle intervals for each sector (Δθ = π/2/ntheta and ΔΦ = 2π/nphi).
-Returns an object of type `SkySectors`. See package documentation for details.
+See package documentation for details.
+
+## Arguments
+- `ntheta`: Number of zenith rings.
+- `nphi`: Number of sectors per zenith ring.
+
+## Returns
+An object of type `SkySectors`. See package documentation for details.
 """
 function equal_angle_intervals(ntheta, nphi)
     Δθ = π / 2 / ntheta * 1.0
@@ -64,7 +143,14 @@ end
 
 Discretize the sky into `ntheta` zenith rings and a number of sectors per ring
 that is proportional to `sin(θ)`. The total number of sectors will be `ntheta*nphi`.
-Returns an object of type `SkySectors`. See package documentation for details.
+See package documentation for details.
+
+## Arguments
+- `ntheta`: Number of zenith rings.
+- `nphi`: Total number of sectors in the sky dome.
+
+## Returns
+An object of type `SkySectors`. See package documentation for details.
 """
 function equal_solid_angles(ntheta, nphi)
     # Distribution sectors along zenith angles
@@ -106,20 +192,106 @@ end
 #=
     Object containing sky sectors and the radiosity associated to each of them
 =#
+
+"""
+    SkyDome(sectors::SkySectors, I::Vector{IT})
+
+Data structure that represents a sky dome with sectors and their associated radiosity.
+It contains the sectors of the sky and the radiosity values for each sector.
+See package documentation for details.
+
+This type is immutable.
+
+## Fields:
+- `sectors`: An instance of `SkySectors` containing the zenith and azimuth angles of each sector.
+- `I`: A vector of radiosity values associated with each sector (in W/m²/sr). 
+"""
 struct SkyDome{AT, IT}
     sectors::SkySectors{AT}
     I::Vector{IT}
 end
 
+"""
+    getindex(s::SkyDome, i::Int)
+
+Get the lower and upper zenith and azimuth angles of the `i`-th sector in the SkyDome object,
+along with the associated radiosity. See package documentation for details.
+
+## Arguments
+- `s`: An instance of `SkyDome`.
+- `i`: An integer index of the sector.
+
+## Returns
+A tuple containing the lower zenith angle (`θₗ`), upper zenith angle (`θᵤ`),
+lower azimuth angle (`Φₗ`), upper azimuth angle (`Φᵤ`) in radians, and 
+radiosity (`I`) of the `i`-th sector in W/m²/sr.
+"""
 function getindex(s::SkyDome, i::Int)
     (θₗ = s.sectors.θₗ[i], θᵤ = s.sectors.θᵤ[i],
         Φₗ = s.sectors.Φₗ[i], WΦᵤ = s.sectors.Φᵤ[i],
         I = s.I[i])
 end
+
+"""
+    length(s::SkyDome)
+
+Get the number of sectors in the SkyDome object.
+See package documentation for details.
+
+## Arguments
+- `s`: An instance of `SkyDome`.
+
+## Returns
+The number of sectors in the SkyDome object.
+"""
 length(s::SkyDome) = length(s.sectors.θₗ)
+
+"""
+    lastindex(s::SkyDome)
+
+Get the last index of the sectors in the SkyDome object.
+See package documentation for details.
+
+## Arguments
+- `s`: An instance of `SkyDome`.
+
+## Returns
+The last index of the sectors in the SkyDome object.
+"""
 lastindex(s::SkyDome) = length(s)
+
+"""
+    iterate(s::SkyDome, state = 1)
+
+Iterate over the sectors in the SkyDome object.
+See package documentation for details.
+
+## Arguments
+- `s`: An instance of `SkyDome`.
+- `state`: The current state of the iteration (default is 1).
+
+## Returns
+A tuple containing the sector data and the next state, or `nothing` if the
+end of the sectors is reached.
+"""
 iterate(s::SkyDome, state = 1) = state > length(s) ? nothing : (s[state], state + 1)
 
+"""
+    DirectionalSource(sky, box, nrays)
+
+Create a vector of directional sources from a sky dome object.
+See package documentation for details.
+
+## Arguments
+- `sky`: An instance of `SkyDome` containing the sectors and their radiosity.
+- `box`: An axis-aligned bounding box that defines the spatial extent of the sources.
+- `nrays`: The total number of rays to be generated for each sector.
+
+## Returns
+A vector of `DirectionalSource` objects, each representing a directional source
+with its zenith angle (`θ`), azimuth angle (`Φ`), radiosity (`radiosity`), and the 
+number of rays (`nraysi`) to be generated.
+"""
 function DirectionalSource(sky::SkyDome, box, nrays)
     # Determine the zenith and azimuth angle of each sector
     θₗ = convert(Vector{Float64}, getproperty.(sky.sectors, :θₗ))
@@ -135,10 +307,29 @@ function DirectionalSource(sky::SkyDome, box, nrays)
         nrays = nraysi) for i in eachindex(θ)]
 end
 
-#This function creates a sky dome of diffuse irradiance for a given mesh, using
-# different models of angular distribution (sky_model) and methods of
-# discretization (dome_method). It returns a vector of directional sources as
-# required by the ray tracer in VPL.
+"""
+    sky_dome(box; Idif = 1.0, nrays_dif = 1_000,
+        sky_model = StandardSky, dome_method = equal_solid_angles,
+        ntheta = 9, nphi = 12, kwargs...)
+    
+Create a sky dome of diffuse irradiance for a given mesh, using
+different models of angular distribution (`sky_model`) and methods of
+discretization (`dome_method`).
+
+## Arguments
+- `box`: An axis-aligned bounding box (AABB) that defines the spatial extent of the sources.
+- `Idif`: The diffuse solar radiation measured on the horizontal plane (a single value or tuple).
+- `nrays_dif`: The total number of rays to be generated for diffuse solar radiation.
+- `sky_model`: The angular distribution of diffuse irradiance (`StandardSky`, `UniformSky` or `CIE`).
+- `dome_method`: The method to discretize hemisphere into patches for diffuse solar radiation 
+(`equal_solid_angles` or `equal_angle_intervals`).
+- `ntheta`: The number of divisions along the zenith angle for `dome_method`.
+- `nphi`: The number of divisions along the azimuthal angle for `dome_method`.
+- `kwargs...`: Additional arguments to be used when `dome_method = CIE`
+
+## Returns
+A vector of `DirectionalSource` objects as required by the ray tracer in VPL.
+"""
 function sky_dome(box; Idif = 1.0, nrays_dif = 1_000,
     sky_model = StandardSky, dome_method = equal_solid_angles, ntheta = 9,
     nphi = 12, kwargs...)
@@ -172,7 +363,7 @@ end
                kwargs...)
 
 Create a vector of directional radiation sources representing diffuse and
-direct solar radiation for a given mesh.
+direct solar radiation for a given mesh. See package documentation for details.
 
 # Arguments
 - `mesh`: A `Mesh` object generated by VPL.
@@ -190,7 +381,6 @@ direct solar radiation for a given mesh.
 
 # Returns
 A vector of directional sources that can be used for ray tracing calculations in VPL.
-```
 """
 function sky(mesh::AccMesh;
     # Inputs for direct solar radiation
@@ -263,7 +453,10 @@ end
 """
     UniformSky()
 
-Model of uniform sky diffuse radiation. See package documentation for details.
+Data structure representing a uniform sky diffuse radiation model.
+See package documentation for details.
+
+This type is immutable and does not contain any fields.
 """
 struct UniformSky <: RadianceDistribution
 end
@@ -274,6 +467,14 @@ end
 Calculate the radiosity of each section of `sky` on the horizontal plane given diffuse
 irradiance on the horizontal plane (`Idif` with `nw` wavebands) assuming a Uniform Sky model.
 See package documentation for details.
+
+## Arguments
+- `m`: An instance of `UniformSky`.
+- `sky`: An instance of `SkySectors` containing the zenith and azimuth angles of each sector.
+- `Idif`: A vector of diffuse irradiance values on the horizontal plane with `nw` wavebands.
+
+## Returns
+An instance of `SkyDome` containing the sectors and their associated radiosity values.
 """
 function radiosity(m::UniformSky,
     sky::SkySectors,
@@ -303,6 +504,14 @@ end
 Calculate the radiosity of each section of `sky` on the horizontal plane given diffuse
 irradiance on the horizontal plane (`Idif` with `nw` wavebands) assuming a Standard Sky
 model and for `nw` wavebands. See package documentation for details.
+
+## Arguments
+- `m`: An instance of `StandardSky`.
+- `sky`: An instance of `SkySectors` containing the zenith and azimuth angles of each sector.
+- `Idif`: A vector of diffuse irradiance values on the horizontal plane with `nw` wavebands, in W/m²/sr.
+
+## Returns
+An instance of `SkyDome` containing the sectors and their associated radiosity values.
 """
 function radiosity(m::StandardSky,
     sky::SkySectors,
@@ -321,6 +530,24 @@ end
 #=
     General Sky model from CIE Standard (Darula & Kittler, 2002)
 =#
+"""
+    CIE
+
+Data structure representing a CIE standard sky diffuse radiation model (Darula & Kittler, 2002).
+See package documentation for details.
+
+This type is immutable and contains the parameters of the CIE model.
+
+## Fields:
+- `a`: Parameter a of the CIE model.
+- `b`: Parameter b of the CIE model.
+- `c`: Parameter c of the CIE model.
+- `d`: Parameter d of the CIE model.
+- `e`: Parameter e of the CIE model.
+- `θₛ`: Zenith angle of the solar disc (in radians).
+- `Φₛ`: Azimuth angle of the solar disc (in radians).
+- `denom`: Denominator factor for the CIE model, computed during initialization.
+"""
 struct CIE <: RadianceDistribution
     a::Float64
     b::Float64
@@ -334,14 +561,22 @@ end
 
 """
     CIE(;type = 1, θₛ = 0.0, Φₛ = 0.0, rtol = sqrt(eps(Float64)), atol = 0.0,
-maxevals = typemax(Int))
+         maxevals = typemax(Int))
 
-Create a standard CIE model of sky diffuse radiance on the horizontal plane as described by
-Darula and Kittler (2002). The argument `type` can have values from 1 to 15
-representing the 15 standard CIE models. θₛ and Φₛ are the zenith and azimuth
-angles of the solar disc. `rtol` and `atol` and `maxevals` are the relative
-tolerance, absolute tolerance and maximum number of function evaluation of the
-numerical integration algorithm. See package documentation for details.
+Create a standard CIE model of sky diffuse radiance on the horizontal plane 
+as described by Darula and Kittler (2002).  
+See package documentation for details.
+
+## Arguments
+- `type`: The type of CIE model (1 to 15).
+- `θₛ`: Zenith angle of the solar disc (in radians).
+- `Φₛ`: Azimuth angle of the solar disc (in radians).
+- `rtol`: Relative tolerance for the numerical integration.
+- `atol`: Absolute tolerance for the numerical integration.
+- `maxevals`: Maximum number of function evaluations for the numerical integration.
+    
+## Returns
+An instance of `CIE` containing the parameters of the CIE model and the computed denominator factor.
 """
 function CIE(; type = 1, θₛ = 0.0, Φₛ = 0.0, rtol = sqrt(eps(Float64)), atol = 0.0,
     maxevals = typemax(Int))
@@ -353,6 +588,19 @@ function CIE(; type = 1, θₛ = 0.0, Φₛ = 0.0, rtol = sqrt(eps(Float64)), at
 end
 
 # Generate the parameters for the 15 CIE models
+"""
+    CIEmodel(type::Int)
+
+    Get the parameters of the CIE model based on the specified type.
+    There are 15 types of CIE models, each with different parameters.
+    See package documentation for details.
+
+    ## Arguments
+    - `type`: An integer indicating the type of CIE model (1 to 15).
+
+    ## Returns
+    A tuple containing the parameters of the CIE model.
+"""
 function CIEmodel(type::Int)
     if type == 1
         (a = 4.0, b = -0.7, c = 0.0, d = -1.0, e = 0.0)
@@ -390,23 +638,90 @@ function CIEmodel(type::Int)
 end
 
 # Function use to compute denom factor
+"""
+    f_denom(θ, Φ, a, b, c, d, e, θₛ, Φₛ)
+
+Compute the denominator factor for the CIE model based on the zenith angle `θ`, azimuth angle `Φ`,
+and the parameters of the CIE model (`a`, `b`, `c`, `d`, `e`).
+See package documentation for details.
+
+## Arguments
+- `θ`: Zenith angle (in radians).
+- `Φ`: Azimuth angle (in radians).
+- `a`, `b`, `c`, `d`, `e`: Parameters of the CIE model.
+- `θₛ`: Zenith angle of the solar disc (in radians).
+- `Φₛ`: Azimuth angle of the solar disc (in radians).
+
+## Returns
+The denominator factor for the CIE model.
+"""
 function f_denom(θ, Φ, a, b, c, d, e, θₛ, Φₛ)
     γₛ = acos(cos(θₛ) * cos(θ) + sin(θₛ) * sin(θ) * cos(abs(Φ - Φₛ)))
     fCIE(a, b, c, d, e, θ, γₛ) * sin(θ) * cos(θ)
 end
 
 # Relative radiance with respect to any direction in the sky dome
+"""
+    fCIE(a, b, c, d, e, θ, γₛ)
+
+Compute the relative radiance for a given zenith angle `θ` and solar angle `γₛ`
+based on the parameters of the CIE model (`a`, `b`, `c`, `d`, `e`).
+See package documentation for details.
+
+## Arguments
+- `a`, `b`, `c`, `d`, `e`: Parameters of the CIE model.
+- `θ`: Zenith angle (in radians).
+- `γₛ`: Solar angle (in radians).
+
+## Returns
+The relative radiance value.
+"""
 function fCIE(a, b, c, d, e, θ, γₛ)
     (1 + c * (exp(d * γₛ) - exp(d * π / 2)) + e * cos(γₛ)^2) * (1 + a * exp(b / cos(θ)))
 end
 
 # Radiance for a given angle normalized by horizontal irradiance
+"""
+    radiance(m::CIE, θ, Φ)
+
+Calculate the radiance for a given zenith angle `θ` and azimuth angle `Φ`
+based on the CIE model parameters. The radiance is normalized by the
+denominator factor computed during initialization of the CIE model.
+See package documentation for details.
+
+## Arguments
+- `m`: An instance of `CIE` containing the parameters of the CIE model.
+- `θ`: Zenith angle (in radians).
+- `Φ`: Azimuth angle (in radians).
+
+## Returns
+The radiance value normalized by the denominator factor.
+"""
 function radiance(m::CIE, θ, Φ)
     γₛ = acos(cos(m.θₛ) * cos(θ) + sin(m.θₛ) * sin(θ) * cos(abs(Φ - m.Φₛ)))
     fCIE(m.a, m.b, m.c, m.d, m.e, θ, γₛ) / m.denom
 end
 
 # Radiosity for a sector of the sky on horizontal plane normalized by horizontal irradiance
+"""
+    radiosity(m::CIE, sky::SkySectors, Idif::SVector{nw, Float64} = SVector{1, Float64}(1.0);
+    rtol = sqrt(eps(Float64)), atol = 0.0, maxevals = typemax(Int)) where {nw}
+
+Calculate the radiosity of each section of `sky` on the horizontal plane given diffuse
+irradiance on the horizontal plane (`Idif` with `nw` wavebands) assuming a CIE model.
+See package documentation for details.
+
+## Arguments
+- `m`: An instance of `CIE`.
+- `sky`: An instance of `SkySectors` containing the zenith and azimuth angles of each sector.
+- `Idif`: A vector of diffuse irradiance values on the horizontal plane with `nw` wavebands, in W/m²/sr.
+- `rtol`: Relative tolerance for the numerical integration.
+- `atol`: Absolute tolerance for the numerical integration.
+- `maxevals`: Maximum number of function evaluations for the numerical integration.
+
+## Returns
+An instance of `SkyDome` containing the sectors and their associated radiosity values.
+"""
 function radiosity(m::CIE, sky::SkySectors,
     Idif::SVector{nw, Float64} = SVector{1, Float64}(1.0);
     rtol = sqrt(eps(Float64)), atol = 0.0, maxevals = typemax(Int)) where {nw}
