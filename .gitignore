@@ -6,3 +6,4 @@ dev
 dev_
 .gitignore
 .vscode
+.claude
