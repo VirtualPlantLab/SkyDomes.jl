@@ -19,7 +19,7 @@ let
     PGP.add_property!(mesh, :materials, mats[ids])
 
     # 1. Generate the solar irradiance at a specific moment in time
-    lat = 52.0 * π / 180.0
+    lat = 52.0
     DOY = 182
     f = 0.5
     Ig, Idir, Idif, theta = SkyDomes.clear_sky(lat = lat, DOY = DOY, f = f)
@@ -87,7 +87,7 @@ let
     sources = SkyDomes.sky(acc_mesh, Idir = (Idir_PAR, Idir_PAR), Idif = (Idif_PAR, Idif_PAR),
         nrays_dif = 10_000_000, nrays_dir = 1_000_000, theta_dir = theta,
         sky_model = StandardSky, dome_method = equal_solid_angles, ntheta = 9, nphi = 12,
-        α = π / 2)
+        α = 90.0)
     rtobj = RayTracer(acc_mesh, PlantRayTracer.materials(mesh), sources, settings)
     trace!(rtobj)
     power_out = sum(source.power * source.nrays for source in sources)[1]
@@ -107,7 +107,7 @@ let
     sources_slope = SkyDomes.sky(acc_mesh, Idir = (Idir_PAR, Idir_PAR), Idif = (Idif_PAR, Idif_PAR),
         nrays_dif = 10_000_000, nrays_dir = 1_000_000, theta_dir = theta,
         sky_model = StandardSky, dome_method = equal_solid_angles, ntheta = 9, nphi = 12,
-        alpha_soil = π / 3, beta_soil = π, warn_slope = false)
+        alpha_soil = 60.0, beta_soil = 180.0, warn_slope = false)
     @test length(sources_slope) < length(sources_flat)
 
     # A warning is emitted when sources are pruned, and silenced by warn_slope = false.
@@ -115,12 +115,12 @@ let
         Idir = (Idir_PAR, Idir_PAR), Idif = (Idif_PAR, Idif_PAR),
         nrays_dif = 1_000, nrays_dir = 1_000, theta_dir = theta,
         sky_model = StandardSky, dome_method = equal_solid_angles, ntheta = 9, nphi = 12,
-        alpha_soil = π / 3, beta_soil = π)
+        alpha_soil = 60.0, beta_soil = 180.0)
     @test_nowarn SkyDomes.sky(acc_mesh,
         Idir = (Idir_PAR, Idir_PAR), Idif = (Idif_PAR, Idif_PAR),
         nrays_dif = 1_000, nrays_dir = 1_000, theta_dir = theta,
         sky_model = StandardSky, dome_method = equal_solid_angles, ntheta = 9, nphi = 12,
-        alpha_soil = π / 3, beta_soil = π, warn_slope = false)
+        alpha_soil = 60.0, beta_soil = 180.0, warn_slope = false)
 
     # Energy is conserved among the (pruned) sources that do reach the soil. A slope
     # intercepts less than the horizontal flux, so we check conservation against the
@@ -136,6 +136,6 @@ let
     # A direct (sun) source that falls below the slope horizon is removed; with no
     # other sources this leaves nothing and `sky` errors.
     @test_throws ErrorException SkyDomes.sky(acc_mesh, Idir = 1.0, Idif = 0.0,
-        nrays_dir = 1_000, nrays_dif = 0, theta_dir = π / 4, phi_dir = 0.0,
-        alpha_soil = π / 3, beta_soil = π, warn_slope = false)
+        nrays_dir = 1_000, nrays_dif = 0, theta_dir = 45.0, phi_dir = 0.0,
+        alpha_soil = 60.0, beta_soil = 180.0, warn_slope = false)
 end

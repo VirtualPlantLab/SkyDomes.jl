@@ -45,7 +45,7 @@ let
 
     # CIE distributions - 1 waveband
     for i in 1:15
-        cie = CIE(type = i, θₛ = π / 4, Φₛ = π / 2)
+        cie = CIE(type = i, θₛ = 45.0, Φₛ = 90.0)
         solid_cie = SkyDomes.radiosity(cie, solid)
         @test all(sum(solid_cie.I) .≈ [1.0])
         angles_cie = SkyDomes.radiosity(cie, angles)
@@ -54,7 +54,7 @@ let
 
     # CIE distributions - 3 wavebands
     for i in 1:15
-        cie = CIE(type = i, θₛ = π / 4, Φₛ = π / 2)
+        cie = CIE(type = i, θₛ = 45.0, Φₛ = 90.0)
         solid_cie = SkyDomes.radiosity(cie, solid, threes)
         @test all(sum(solid_cie.I) .≈ [1.0, 1.0, 1.0])
         angles_cie = SkyDomes.radiosity(cie, angles, threes)

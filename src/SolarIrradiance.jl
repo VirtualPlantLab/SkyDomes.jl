@@ -13,8 +13,8 @@ For cloudy skies this code is based on:
 - Spitters et al. (1986)
 =#
 
-# Calculate the declination angle
-declination(DOY) = 23.45 * π / 180.0 * sin(2π / 365 * (DOY - 81))
+# Calculate the declination angle in degrees
+declination(DOY) = 23.45 * sin(2π / 365 * (DOY - 81))
 
 # Calculate the solar zenith and azimuth angle and its cosine at a given location and time.
 function solar_angles(; lat, t, dec)
@@ -41,10 +41,12 @@ function air_mass(cos_theta, theta)
     1.0 / (cos_theta + 0.50572 * (96.07995 - theta * 180 / pi)^(-1.6354))
 end
 
-# Calculate the length of the diurnal part of a day (h) based on latitude and declination angle
+# Calculate the length of the diurnal part of a day (h) based on latitude and declination angle (both in degrees)
 function day_length(lat, dec)
+    lat_rad = lat * π / 180
+    dec_rad = dec * π / 180
     # Calculate sunset angle with respect to solar noon, including corrections for extreme latitudes
-    cosSunset = -tan(lat) * tan(dec)
+    cosSunset = -tan(lat_rad) * tan(dec_rad)
     sunset = ifelse(cosSunset > 1.0, 0.0, ifelse(cosSunset < -1.0, π, acos(cosSunset)))
     # Day length in hours knowing that 1 hour = 15 degrees
     2.0 * sunset * 180.0 / π / 15.0
@@ -67,7 +69,7 @@ Calculate global, direct and diffuse solar radiation on the horizontal plane usi
 the clear sky model by Ineichen and Perez (2002).
 
 # Arguments
-- `lat`: latitude in radians
+- `lat`: latitude in degrees
 - `DOY`: day of year
 - `f`: fraction of the day (0 = sunrise, 1 = sunset)
 - `altitude`: altitude above sea level in meters (default 0.0)
@@ -78,8 +80,8 @@ A named tuple with fields:
 - `Ig`: global solar radiation on the horizontal plane in W/m^2
 - `Idir`: direct solar radiation on the horizontal plane in W/m^2
 - `Idif`: diffuse solar radiation on the horizontal plane in W/m^2
-- `theta`: solar zenith angle in radians
-- `phi`: solar azimuth angle in radians
+- `theta`: solar zenith angle in degrees
+- `phi`: solar azimuth angle in degrees
 
 # References
 Ineichen P., Perez R., A new airmass independent formulation for
@@ -87,15 +89,18 @@ the Linke turbidity coefficient, Solar Energy, Vol 73(3), pp.151–157, 2002.
 """
 function clear_sky(; lat, DOY, f, altitude = 0.0, TL = 4.0)
     # Check validity of inputs
-    @assert abs(lat) <= pi / 2
+    @assert abs(lat) <= 90.0
     @assert 0.0 <= f <= 1.0
     @assert 0 < DOY <= 365
+    # Convert lat to radians for internal calculations
+    lat_rad = lat * π / 180
     # Basic astronomical quantities
     Io = extraterrestrial(DOY)
-    dec = declination(DOY) # declination angle of the sun
+    dec = declination(DOY) # declination angle of the sun in degrees
     DL = day_length(lat, dec)
     t = timeOfDay(f, DL)
-    cos_theta, theta, phi = solar_angles(; lat = lat, dec = dec, t = t)
+    dec_rad = dec * π / 180
+    cos_theta, theta, phi = solar_angles(; lat = lat_rad, dec = dec_rad, t = t)
     # Clear sky model by Ineichen and Perez (2002)
     am = air_mass(cos_theta, theta)
     fh1 = exp(-altitude / 8000)
@@ -107,7 +112,7 @@ function clear_sky(; lat, DOY, f, altitude = 0.0, TL = 4.0)
     # Direct solar radiation on the horizontal plane
     b = 0.664 + 0.163 / fh1
     Idir = Io * cos_theta * b * exp(-0.09 * am * (TL - 1))
-    return (Ig = Ig, Idir = Idir, Idif = Ig - Idir, theta = theta, phi = phi)
+    return (Ig = Ig, Idir = Idir, Idif = Ig - Idir, theta = theta * 180 / π, phi = phi * 180 / π)
 end
 
 
@@ -122,7 +127,7 @@ of the extraterrestrial solar radiationa and that 23% of the global radiation is
 (this corresponds to a clear sky).
 
 # Arguments
-- `lat`: latitude in radians
+- `lat`: latitude in degrees
 - `DOY`: day of year
 - `Igd`: Observed daily global solar radiation on the horizontal plane in J/m^2 (NOT MJ/m2)
 
@@ -139,13 +144,16 @@ global radiation and its implications for modeling canopy photosynthesis Part I.
 of incoming radiation. Agricultural and Forest Meteorology Vol 38(1-3), pp. 217-29, 1986.
 """
 function daily_radiation(;lat, DOY, Igd = nothing)
-    @assert abs(lat) <= pi / 2
+    @assert abs(lat) <= 90.0
     @assert 0 < DOY <= 365
+    # Convert lat to radians for internal calculations
+    lat_rad = lat * π / 180
     # Basic astronomical quantities
-    dec = declination(DOY) # declination angle of the sun
+    dec = declination(DOY) # declination angle of the sun in degrees
     DL = day_length(lat, dec)
+    dec_rad = dec * π / 180
     # Integration of sin(beta) over the day in s -> Eq 18 by Spitters et al (1986)
-    int = 3600*(DL*sin(lat)*sin(dec) + (24/pi)*cos(lat)*cos(dec)*sqrt(1 - tan(lat)^2*tan(dec)^2))
+    int = 3600*(DL*sin(lat_rad)*sin(dec_rad) + (24/pi)*cos(lat_rad)*cos(dec_rad)*sqrt(1 - tan(lat_rad)^2*tan(dec_rad)^2))
     # Extraterrestial solar radiation
     Iod = extraterrestrial(DOY)*int
     # Clear sky
@@ -188,7 +196,7 @@ assumption is that the relative temporal patterns for the different forms of sol
 # Arguments
 - `Ig`: Observed global solar radiation on the horizontal plane in W/m^2
 - `Iday`: Named tuple with daily radiation values
-- `lat`: latitude in radians
+- `lat`: latitude in degrees
 - `DOY`: day of year
 - `f`: fraction of the day (0 = sunrise, 1 = sunset)
 
@@ -197,8 +205,8 @@ A named tuple with fields:
 - `Ig`: global solar radiation on the horizontal plane in W/m^2
 - `Idir`: direct solar radiation on the horizontal plane in W/m^2
 - `Idif`: diffuse solar radiation on the horizontal plane in W/m^2
-- `theta`: solar zenith angle in radians
-- `phi`: solar azimuth angle in radians
+- `theta`: solar zenith angle in degrees
+- `phi`: solar azimuth angle in degrees
 
 # References
 Spitters CJ, Toussaint HA, Goudriaan J. Separating the diffuse and direct component of
@@ -207,17 +215,20 @@ of incoming radiation. Agricultural and Forest Meteorology Vol 38(1-3), pp. 217-
 """
 function cloudy_sky(;Ig = nothing, Iday = nothing, lat, DOY, f)
     # Check validity of inputs
-    @assert abs(lat) <= pi / 2
+    @assert abs(lat) <= 90.0
     @assert 0.0 <= f <= 1.0
     @assert 0 < DOY <= 365
     @assert !isnothing(Ig) || !isnothing(Iday)
+    # Convert lat to radians for internal calculations
+    lat_rad = lat * π / 180
     # Basic astronomical quantities
     Io = extraterrestrial(DOY)
-    dec = declination(DOY) # declination angle of the sun
+    dec = declination(DOY) # declination angle of the sun in degrees
     DL = day_length(lat, dec)
     t = timeOfDay(f, DL)
+    dec_rad = dec * π / 180
     # Solar elevation angle
-    _, theta, phi = solar_angles(; lat = lat, dec = dec, t = t)
+    _, theta, phi = solar_angles(; lat = lat_rad, dec = dec_rad, t = t)
     beta = π/2 - theta
     if isnothing(Ig) && !isnothing(Iday)
         ft = Io*cos(theta)/Iday.Iod
@@ -242,7 +253,7 @@ function cloudy_sky(;Ig = nothing, Iday = nothing, lat, DOY, f)
     else
         error("Only assign a value to either Ig or Iday, not both.")
     end
-    return (Ig = Ig, Idir = Ig - Idif, Idif = Idif, theta = theta, phi = phi)
+    return (Ig = Ig, Idir = Ig - Idif, Idif = Idif, theta = theta * 180 / π, phi = phi * 180 / π)
 end
 
 # Convert solar irradiance to a particular waveband based on a reference solar
