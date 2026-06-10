@@ -9,7 +9,7 @@ let
     DOYs = rand(1:365, n)
     decs = SkyDomes.declination.(DOYs)
     ts = 24.0 .* rand(n)
-    temp = [SkyDomes.solar_angles(lat = lats[i], dec = decs[i], t = ts[i])
+    temp = [SkyDomes.solar_angles(lat = lats[i], dec = decs[i] * π / 180, t = ts[i])
             for i in 1:n]
     cos_theta, theta, phi = Tuple(getindex.(temp, i) for i in 1:3)
     @test maximum(theta) <= π
@@ -31,7 +31,7 @@ let
 
     # Calculate solar radiation and components for a clear sky
     DOY = 182
-    lat = π / 4
+    lat = 45.0
     df = 0.01
     temp = [clear_sky(lat = lat, DOY = DOY, f = x) for x in df/2:df:1-df/2]
     Igs, Idirs, Idifs = Tuple(getindex.(temp, i) for i in 1:3)
@@ -113,11 +113,11 @@ let
     end
 
     # Check that zenith angles are calculated correctly
-    lat = 0.0*pi/180
+    lat = 0.0
     DOY = 182
     dec = SkyDomes.declination(DOY)
     ts = 0.1:0.1:24.0
-    temp = [SkyDomes.solar_angles(lat = lat, dec = dec, t = t)
+    temp = [SkyDomes.solar_angles(lat = lat * π / 180, dec = dec * π / 180, t = t)
             for t in ts]
     cos_thetas, thetas, phis = Tuple(getindex.(temp, i) for i in 1:3)
     day = cos_thetas .> 0
