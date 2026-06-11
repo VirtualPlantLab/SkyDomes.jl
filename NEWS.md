@@ -2,6 +2,26 @@
 
 We started keeping track of changes in the `NEWS.md` file after version 0.1.10.
 
+# SkyDomes 1.0.1 (2026-06-11)
+
+All internal calculations now use degrees throughout, completing the migration
+started in 1.0.0 (which only changed the public API). The note in 1.0.0 that
+"internal calculations remain in radians" no longer applies.
+
+* All trigonometric calls replaced with degree variants (`cosd`, `sind`, `tand`,
+  `acosd`).
+* Radian constants (`π/2`, `2π`) replaced with their degree equivalents (`90.0`,
+  `360.0`) in discretisation routines and radiosity formulas.
+* Normalisation denominators in `radiosity` updated from `/ π` to `/ 180` to
+  match the degree-valued sector widths.
+* All internal degree↔radian conversions removed from `solar_angles`,
+  `air_mass`, `day_length`, `clear_sky`, `daily_radiation`, and `cloudy_sky`.
+* **Exception**: inside the CIE radiance formula (`fCIE`) the angular distance
+  `γₛ` is kept as a radian-valued local variable because the CIE model
+  parameters (`b`, `d`) were calibrated for radian angles and appear in
+  non-trigonometric terms (`exp(d·γₛ)`). All externally stored and passed
+  angles remain in degrees.
+
 # SkyDomes 1.0.0 (2026-06-10)
 
 **Breaking changes**: All public API functions now express angles in degrees instead of

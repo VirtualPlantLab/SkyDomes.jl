@@ -5,23 +5,23 @@ let
 
     # Check that zenith angles are calculated correctly
     n = 1000
-    lats = .-π ./ 2 .+ π .* rand(n)
+    lats = -90.0 .+ 180.0 .* rand(n)
     DOYs = rand(1:365, n)
     decs = SkyDomes.declination.(DOYs)
     ts = 24.0 .* rand(n)
-    temp = [SkyDomes.solar_angles(lat = lats[i], dec = decs[i] * π / 180, t = ts[i])
+    temp = [SkyDomes.solar_angles(lat = lats[i], dec = decs[i], t = ts[i])
             for i in 1:n]
     cos_theta, theta, phi = Tuple(getindex.(temp, i) for i in 1:3)
-    @test maximum(theta) <= π
+    @test maximum(theta) <= 180.0
     @test minimum(theta) >= 0
     @test maximum(cos_theta) <= 1.0
     @test minimum(cos_theta) >= -1.0
-    @test maximum(phi) <= 2π
+    @test maximum(phi) <= 360.0
     @test minimum(phi) >= 0
 
     # Compute air mass for the different cos_theta and theta from above
-    thetas = 0.0:0.01:(π / 2)
-    ams = SkyDomes.air_mass.(cos.(thetas), thetas)
+    thetas = 0.0:0.01:90.0
+    ams = SkyDomes.air_mass.(cosd.(thetas), thetas)
 
     # Check that extraterrestrial radiation is computed correctly
     DOYs = 1:365
@@ -117,7 +117,7 @@ let
     DOY = 182
     dec = SkyDomes.declination(DOY)
     ts = 0.1:0.1:24.0
-    temp = [SkyDomes.solar_angles(lat = lat * π / 180, dec = dec * π / 180, t = t)
+    temp = [SkyDomes.solar_angles(lat = lat, dec = dec, t = t)
             for t in ts]
     cos_thetas, thetas, phis = Tuple(getindex.(temp, i) for i in 1:3)
     day = cos_thetas .> 0

@@ -9,7 +9,7 @@ let
     # Steps to integrate the sky into VPL
     # 0. Create the mesh in VPL
     r = Rectangle(length = 2.0, width = 1.0)
-    rotatey!(r, -π / 2) # To put it in the XY plane
+    rotatey!(r, -90.0) # To put it in the XY plane
     translate!(r, Vec(0.0, 0.5, 0.0))
     r2 = deepcopy(r)
     translate!(r2, Vec(0.0, 0.0, -1.0))

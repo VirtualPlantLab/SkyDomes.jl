@@ -45,16 +45,16 @@ iterate(s::SkySectors, state = 1) = state > length(s) ? nothing : (s[state], sta
     equal_angle_intervals(ntheta, nphi)
 
 Discretize the sky into `ntheta` zenith rings of `nphi` sectors each assuming
-the same angle intervals for each sector (Δθ = π/2/ntheta and ΔΦ = 2π/nphi).
+the same angle intervals for each sector (Δθ = 90/ntheta and ΔΦ = 360/nphi).
 Returns an object of type `SkySectors`. See package documentation for details.
 """
 function equal_angle_intervals(ntheta, nphi)
-    Δθ = π / 2 / ntheta * 1.0
-    ΔΦ = 2π / nphi * 1.0
-    θₗ = repeat(0.0:Δθ:((π / 2) - Δθ), inner = nphi)
-    θᵤ = repeat(Δθ:Δθ:(π / 2), inner = nphi)
-    Φₗ = repeat(0.0:ΔΦ:((2π) - ΔΦ), outer = ntheta)
-    Φᵤ = repeat(ΔΦ:ΔΦ:(2π), outer = ntheta)
+    Δθ = 90.0 / ntheta
+    ΔΦ = 360.0 / nphi
+    θₗ = repeat(0.0:Δθ:(90.0 - Δθ), inner = nphi)
+    θᵤ = repeat(Δθ:Δθ:90.0, inner = nphi)
+    Φₗ = repeat(0.0:ΔΦ:(360.0 - ΔΦ), outer = ntheta)
+    Φᵤ = repeat(ΔΦ:ΔΦ:360.0, outer = ntheta)
 
     SkySectors(θₗ, θᵤ, Φₗ, Φᵤ)
 end
@@ -68,16 +68,16 @@ Returns an object of type `SkySectors`. See package documentation for details.
 """
 function equal_solid_angles(ntheta, nphi)
     # Distribution sectors along zenith angles
-    Δθ = (π / 2 / ntheta)
-    uθₗ = 0.0:Δθ:((π / 2) - Δθ)
-    uθᵤ = Δθ:Δθ:(π / 2)
+    Δθ = 90.0 / ntheta
+    uθₗ = 0.0:Δθ:(90.0 - Δθ)
+    uθᵤ = Δθ:Δθ:90.0
 
     # Calculate number of azimuth sectors and ΔΦ per zenith ring
-    fac = cos.(uθₗ) - cos.(uθᵤ)
+    fac = cosd.(uθₗ) - cosd.(uθᵤ)
     n = ntheta * nphi
     nphis = round.(fac ./ sum(fac) .* n)
     sum(nphis) != n && (nphis[end] = nphis[end] + n - sum(nphis))
-    ΔΦs = (2π ./ nphis)
+    ΔΦs = 360.0 ./ nphis
 
     # Generate coordinates of all sectors
     c = 1
@@ -120,7 +120,7 @@ length(s::SkyDome) = length(s.sectors.θₗ)
 lastindex(s::SkyDome) = length(s)
 iterate(s::SkyDome, state = 1) = state > length(s) ? nothing : (s[state], state + 1)
 
-function DirectionalSource(sky::SkyDome, box, nrays; α = π, alpha_soil = 0.0, beta_soil = π)
+function DirectionalSource(sky::SkyDome, box, nrays; α = 180.0, alpha_soil = 0.0, beta_soil = 180.0)
     # Determine the zenith and azimuth angle of each sector
     θₗ = convert(Vector{Float64}, getproperty.(sky.sectors, :θₗ))
     θᵤ = convert(Vector{Float64}, getproperty.(sky.sectors, :θᵤ))
@@ -141,7 +141,7 @@ end
 # required by the ray tracer in VPL.
 function sky_dome(box; Idif = 1.0, nrays_dif = 1_000,
     sky_model = StandardSky, dome_method = equal_solid_angles, ntheta = 9,
-    nphi = 12, α = π, alpha_soil = 0.0, beta_soil = π, kwargs...)
+    nphi = 12, α = 180.0, alpha_soil = 0.0, beta_soil = 180.0, kwargs...)
     # Generate the angular distribution of irradiance according to different methods
     if sky_model == CIE
         sky_distro = CIE(kwargs...)
@@ -227,12 +227,6 @@ function sky(mesh::AccMesh;
     any(Idir .< 0.0) && @warn "Idir should be non-negative. Proceed at your own risk."
     any(Idif .< 0.0) && @warn "Idif should be non-negative. Proceed at your own risk."
     mesh.grid.nleaves <= 1 && @warn "The scene should include clones in the x and y directions when using Sky domes. Proceed at your own risk."
-    # Convert all angle inputs from degrees to radians for internal calculations
-    theta_dir_rad = theta_dir * π / 180
-    phi_dir_rad   = phi_dir   * π / 180
-    α_rad         = α         * π / 180
-    alpha_soil_rad = alpha_soil * π / 180
-    beta_soil_rad  = beta_soil  * π / 180
     # To avoid multiple repetitions
     has_diffuse = false
     has_direct = false
@@ -248,14 +242,14 @@ function sky(mesh::AccMesh;
         @assert nphi > 0
         sources = sky_dome(box, Idif = convert_svector(Idif), nrays_dif = nrays_dif,
             sky_model = sky_model, dome_method = dome_method,
-            ntheta = ntheta, nphi = nphi, α = α_rad, alpha_soil = alpha_soil_rad,
-            beta_soil = beta_soil_rad, kwargs...)
+            ntheta = ntheta, nphi = nphi, α = α, alpha_soil = alpha_soil,
+            beta_soil = beta_soil, kwargs...)
         has_diffuse = true
     end
     # Generate directional source for direct solar radiation
     if any(Idir .> 0.0)
-        source = DirectionalSource(box, θ = theta_dir_rad, Φ = phi_dir_rad, α = α_rad,
-                                   alpha_soil = alpha_soil_rad, beta_soil = beta_soil_rad,
+        source = DirectionalSource(box, θ = theta_dir, Φ = phi_dir, α = α,
+                                   alpha_soil = alpha_soil, beta_soil = beta_soil,
                                    radiosity = convert_svector(Idir), nrays = nrays_dir)
         has_direct = true
         has_diffuse && push!(sources, source)
@@ -313,7 +307,7 @@ function radiosity(m::UniformSky,
     sky::SkySectors,
     Idif::SVector{nw, Float64} = SVector{1, Float64}(1.0)) where {nw}
     # Equation 15
-    I = SVector{nw, Float64}[(t = (s.Φᵤ - s.Φₗ) * (cos(s.θₗ)^2 - cos(s.θᵤ)^2) / 2 / π;
+    I = SVector{nw, Float64}[(t = (s.Φᵤ - s.Φₗ) * (cosd(s.θₗ)^2 - cosd(s.θᵤ)^2) / 2 / 180;
                               SVector{nw, Float64}(t .* Idif[i] for i in 1:nw)) for s in sky]
     SkyDome(sky, I)
 end
@@ -342,8 +336,8 @@ function radiosity(m::StandardSky,
     sky::SkySectors,
     Idif::SVector{nw, Float64} = SVector{1, Float64}(1.0)) where {nw}
     # Equation 22
-    I = SVector{nw, Float64}[(t = (s.Φᵤ - s.Φₗ) * ((4cos(s.θₗ) + 3) * cos(s.θₗ)^2 -
-                                   (4cos(s.θᵤ) + 3) * cos(s.θᵤ)^2) / 14 / π;
+    I = SVector{nw, Float64}[(t = (s.Φᵤ - s.Φₗ) * ((4cosd(s.θₗ) + 3) * cosd(s.θₗ)^2 -
+                                   (4cosd(s.θᵤ) + 3) * cosd(s.θᵤ)^2) / 14 / 180;
     SVector{nw, Float64}(t .* Idif[i] for i in 1:nw)) for s in sky]
     SkyDome(sky, I)
 end
@@ -379,13 +373,11 @@ numerical integration algorithm. See package documentation for details.
 """
 function CIE(; type = 1, θₛ = 0.0, Φₛ = 0.0, rtol = sqrt(eps(Float64)), atol = 0.0,
     maxevals = typemax(Int))
-    θₛ_rad = θₛ * π / 180
-    Φₛ_rad = Φₛ * π / 180
     a, b, c, d, e = CIEmodel(type)
-    denom = hcubature(x -> f_denom(x[1], x[2], a, b, c, d, e, θₛ_rad, Φₛ_rad),
-        (0.0, 0.0), (π / 2, 2π); rtol = rtol, atol = atol,
+    denom = hcubature(x -> f_denom(x[1], x[2], a, b, c, d, e, θₛ, Φₛ),
+        (0.0, 0.0), (90.0, 360.0); rtol = rtol, atol = atol,
         maxevals = maxevals)
-    CIE(a, b, c, d, e, θₛ_rad, Φₛ_rad, denom[1])
+    CIE(a, b, c, d, e, θₛ, Φₛ, denom[1])
 end
 
 # Generate the parameters for the 15 CIE models
@@ -425,20 +417,25 @@ function CIEmodel(type::Int)
     end
 end
 
-# Function use to compute denom factor
+# Function used to compute the denom normalisation factor (θ, Φ, θₛ, Φₛ in degrees)
 function f_denom(θ, Φ, a, b, c, d, e, θₛ, Φₛ)
-    γₛ = acos(cos(θₛ) * cos(θ) + sin(θₛ) * sin(θ) * cos(abs(Φ - Φₛ)))
-    fCIE(a, b, c, d, e, θ, γₛ) * sin(θ) * cos(θ)
+    # γₛ is kept in radians: it appears in exp(d*γₛ) where d was calibrated for radian angles
+    # Note: tiny numerical errors introduced in trigonometric function, hence clamps
+    γₛ = acos(clamp(cosd(θₛ) * cosd(θ) + sind(θₛ) * sind(θ) * cosd(abs(Φ - Φₛ)), -1.0, 1.0))
+    fCIE(a, b, c, d, e, θ, γₛ) * sind(θ) * cosd(θ)
 end
 
-# Relative radiance with respect to any direction in the sky dome
+# Relative radiance with respect to any direction in the sky dome (θ in degrees, γₛ in radians)
 function fCIE(a, b, c, d, e, θ, γₛ)
-    (1 + c * (exp(d * γₛ) - exp(d * π / 2)) + e * cos(γₛ)^2) * (1 + a * exp(b / cos(θ)))
+    # γₛ stays in radians here: exp(d*γₛ) and exp(d*π/2) use the CIE parameters as calibrated
+    (1 + c * (exp(d * γₛ) - exp(d * π / 2)) + e * cos(γₛ)^2) * (1 + a * exp(b / cosd(θ)))
 end
 
-# Radiance for a given angle normalized by horizontal irradiance
+# Radiance for a given angle normalized by horizontal irradiance (θ, Φ in degrees)
 function radiance(m::CIE, θ, Φ)
-    γₛ = acos(cos(m.θₛ) * cos(θ) + sin(m.θₛ) * sin(θ) * cos(abs(Φ - m.Φₛ)))
+    # γₛ is kept in radians: it appears in exp(d*γₛ) where d was calibrated for radian angles
+    # Note: tiny numerical errors introduced in trigonometric function, hence clamps
+    γₛ = acos(clamp(cosd(m.θₛ) * cosd(θ) + sind(m.θₛ) * sind(θ) * cosd(abs(Φ - m.Φₛ)), -1.0, 1.0))
     fCIE(m.a, m.b, m.c, m.d, m.e, θ, γₛ) / m.denom
 end
 
@@ -446,8 +443,8 @@ end
 function radiosity(m::CIE, sky::SkySectors,
     Idif::SVector{nw, Float64} = SVector{1, Float64}(1.0);
     rtol = sqrt(eps(Float64)), atol = 0.0, maxevals = typemax(Int)) where {nw}
-    I = SVector{nw, Float64}[(t = hcubature(x -> radiance(m, x[1], x[2]) * cos(x[1]) *
-                                                 sin(x[1]),
+    I = SVector{nw, Float64}[(t = hcubature(x -> radiance(m, x[1], x[2]) * cosd(x[1]) *
+                                                 sind(x[1]),
         (s.θₗ, s.Φₗ), (s.θᵤ, s.Φᵤ); rtol = rtol, atol = atol,
         maxevals = maxevals)[1];
     SVector{nw, Float64}(t .* Idif[i] for i in 1:nw)) for s in sky]

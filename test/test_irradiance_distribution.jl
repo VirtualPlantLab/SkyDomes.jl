@@ -8,14 +8,14 @@ let
     # Discretization of the sky using two methods
     angles = equal_angle_intervals(9, 12)
     solid = equal_solid_angles(9, 12)
-    @test solid[end][2] ≈ π / 2
-    @test solid[end][4] ≈ 2π
+    @test solid[end][2] ≈ 90.0
+    @test solid[end][4] ≈ 360.0
 
     # Uniform distribution - 1 waveband
     uniform = UniformSky()
     solid_uniform = SkyDomes.radiosity(uniform, solid)
-    @test solid_uniform[end][2] ≈ π / 2
-    @test solid_uniform[end][4] ≈ 2π
+    @test solid_uniform[end][2] ≈ 90.0
+    @test solid_uniform[end][4] ≈ 360.0
     @test all(sum(solid_uniform.I) .≈ [1.0])
     angles_uniform = SkyDomes.radiosity(uniform, angles)
     @test all(sum(angles_uniform.I) .≈ [1.0])
@@ -23,8 +23,8 @@ let
     # Uniform distribution - 3 wavebands
     uniform = UniformSky()
     solid_uniform = SkyDomes.radiosity(uniform, solid, threes)
-    @test solid_uniform[end][2] ≈ π / 2
-    @test solid_uniform[end][4] ≈ 2π
+    @test solid_uniform[end][2] ≈ 90.0
+    @test solid_uniform[end][4] ≈ 360.0
     @test all(sum(solid_uniform.I) .≈ threes)
     angles_uniform = SkyDomes.radiosity(uniform, angles, threes)
     @test all(sum(angles_uniform.I) .≈ threes)

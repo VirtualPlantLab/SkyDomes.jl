@@ -14,17 +14,17 @@ For cloudy skies this code is based on:
 =#
 
 # Calculate the declination angle in degrees
-declination(DOY) = 23.45 * sin(2π / 365 * (DOY - 81))
+declination(DOY) = 23.45 * sind(360 / 365 * (DOY - 81))
 
 # Calculate the solar zenith and azimuth angle and its cosine at a given location and time.
 function solar_angles(; lat, t, dec)
-    h = (t - 12.0) * 15.0 * π / 180.0 # hour angle of the sun
-    cos_theta = cos(lat) * cos(dec) * cos(h) + sin(lat) * sin(dec) # cosine of zenith angle
-    theta = acos(cos_theta) # zenith angle
+    h = (t - 12.0) * 15.0 # hour angle of the sun in degrees
+    cos_theta = cosd(lat) * cosd(dec) * cosd(h) + sind(lat) * sind(dec) # cosine of zenith angle
+    theta = acosd(cos_theta) # zenith angle in degrees
     # cosine of azimuth angle for each half of the day
-    cos_phi = (sin(dec)*cos(lat) - cos(h)*cos(dec)*sin(lat))/sin(theta)
-    phi = acos(clamp(cos_phi, -1, 1)) # azimuth angle without correction
-    phi = h < 0 ? phi : 2π - phi # compass azimuth angle with correction
+    cos_phi = (sind(dec)*cosd(lat) - cosd(h)*cosd(dec)*sind(lat))/sind(theta)
+    phi = acosd(clamp(cos_phi, -1, 1)) # azimuth angle without correction
+    phi = h < 0 ? phi : 360.0 - phi # compass azimuth angle with correction
     return (cos_theta, theta, phi) # return both values as a tuple
 end
 
@@ -33,23 +33,21 @@ end
 Civil Engineers (ASCE).
 =#
 function extraterrestrial(DOY)
-    1367.7 * (1.0 + 0.033 * cos(DOY / 365 * 2 * π))
+    1367.7 * (1.0 + 0.033 * cosd(DOY / 365 * 360))
 end
 
-# Kasten and Young (1989) -> Note that theta is transformed to degrees
+# Kasten and Young (1989)
 function air_mass(cos_theta, theta)
-    1.0 / (cos_theta + 0.50572 * (96.07995 - theta * 180 / pi)^(-1.6354))
+    1.0 / (cos_theta + 0.50572 * (96.07995 - theta)^(-1.6354))
 end
 
 # Calculate the length of the diurnal part of a day (h) based on latitude and declination angle (both in degrees)
 function day_length(lat, dec)
-    lat_rad = lat * π / 180
-    dec_rad = dec * π / 180
     # Calculate sunset angle with respect to solar noon, including corrections for extreme latitudes
-    cosSunset = -tan(lat_rad) * tan(dec_rad)
-    sunset = ifelse(cosSunset > 1.0, 0.0, ifelse(cosSunset < -1.0, π, acos(cosSunset)))
+    cosSunset = -tand(lat) * tand(dec)
+    sunset = ifelse(cosSunset > 1.0, 0.0, ifelse(cosSunset < -1.0, 180.0, acosd(cosSunset)))
     # Day length in hours knowing that 1 hour = 15 degrees
-    2.0 * sunset * 180.0 / π / 15.0
+    2.0 * sunset / 15.0
 end
 
 # Returns time of day in solar time (hours) as a function of day length and the
@@ -92,15 +90,12 @@ function clear_sky(; lat, DOY, f, altitude = 0.0, TL = 4.0)
     @assert abs(lat) <= 90.0
     @assert 0.0 <= f <= 1.0
     @assert 0 < DOY <= 365
-    # Convert lat to radians for internal calculations
-    lat_rad = lat * π / 180
     # Basic astronomical quantities
     Io = extraterrestrial(DOY)
     dec = declination(DOY) # declination angle of the sun in degrees
     DL = day_length(lat, dec)
     t = timeOfDay(f, DL)
-    dec_rad = dec * π / 180
-    cos_theta, theta, phi = solar_angles(; lat = lat_rad, dec = dec_rad, t = t)
+    cos_theta, theta, phi = solar_angles(; lat = lat, dec = dec, t = t)
     # Clear sky model by Ineichen and Perez (2002)
     am = air_mass(cos_theta, theta)
     fh1 = exp(-altitude / 8000)
@@ -112,7 +107,7 @@ function clear_sky(; lat, DOY, f, altitude = 0.0, TL = 4.0)
     # Direct solar radiation on the horizontal plane
     b = 0.664 + 0.163 / fh1
     Idir = Io * cos_theta * b * exp(-0.09 * am * (TL - 1))
-    return (Ig = Ig, Idir = Idir, Idif = Ig - Idir, theta = theta * 180 / π, phi = phi * 180 / π)
+    return (Ig = Ig, Idir = Idir, Idif = Ig - Idir, theta = theta, phi = phi)
 end
 
 
@@ -146,14 +141,11 @@ of incoming radiation. Agricultural and Forest Meteorology Vol 38(1-3), pp. 217-
 function daily_radiation(;lat, DOY, Igd = nothing)
     @assert abs(lat) <= 90.0
     @assert 0 < DOY <= 365
-    # Convert lat to radians for internal calculations
-    lat_rad = lat * π / 180
     # Basic astronomical quantities
     dec = declination(DOY) # declination angle of the sun in degrees
     DL = day_length(lat, dec)
-    dec_rad = dec * π / 180
     # Integration of sin(beta) over the day in s -> Eq 18 by Spitters et al (1986)
-    int = 3600*(DL*sin(lat_rad)*sin(dec_rad) + (24/pi)*cos(lat_rad)*cos(dec_rad)*sqrt(1 - tan(lat_rad)^2*tan(dec_rad)^2))
+    int = 3600*(DL*sind(lat)*sind(dec) + (24/π)*cosd(lat)*cosd(dec)*sqrt(1 - tand(lat)^2*tand(dec)^2))
     # Extraterrestial solar radiation
     Iod = extraterrestrial(DOY)*int
     # Clear sky
@@ -219,26 +211,23 @@ function cloudy_sky(;Ig = nothing, Iday = nothing, lat, DOY, f)
     @assert 0.0 <= f <= 1.0
     @assert 0 < DOY <= 365
     @assert !isnothing(Ig) || !isnothing(Iday)
-    # Convert lat to radians for internal calculations
-    lat_rad = lat * π / 180
     # Basic astronomical quantities
     Io = extraterrestrial(DOY)
     dec = declination(DOY) # declination angle of the sun in degrees
     DL = day_length(lat, dec)
     t = timeOfDay(f, DL)
-    dec_rad = dec * π / 180
     # Solar elevation angle
-    _, theta, phi = solar_angles(; lat = lat_rad, dec = dec_rad, t = t)
-    beta = π/2 - theta
+    _, theta, phi = solar_angles(; lat = lat, dec = dec, t = t)
+    beta = 90.0 - theta
     if isnothing(Ig) && !isnothing(Iday)
-        ft = Io*cos(theta)/Iday.Iod
+        ft = Io*cosd(theta)/Iday.Iod
         Ig = ft*Iday.Igd
         Idif = ft*Iday.Idif
     elseif !isnothing(Ig)
         # Calculate Ig/Io
-        IgIo =  ifelse(beta == 0.0, 0.0, min(1.0, Ig/Io/sin(beta)))
+        IgIo =  ifelse(beta == 0.0, 0.0, min(1.0, Ig/Io/sind(beta)))
         # Compute Idf/Ig according to equation in Appendix at Spitters et al. (1986)
-        R = 0.847 - 1.61*sin(beta) + 1.04*sin(beta)^2
+        R = 0.847 - 1.61*sind(beta) + 1.04*sind(beta)^2
         K = (1.47 - R)/1.66
         if IgIo <= 0.22
             IdfIg = 1.0
@@ -253,7 +242,7 @@ function cloudy_sky(;Ig = nothing, Iday = nothing, lat, DOY, f)
     else
         error("Only assign a value to either Ig or Iday, not both.")
     end
-    return (Ig = Ig, Idir = Ig - Idif, Idif = Idif, theta = theta * 180 / π, phi = phi * 180 / π)
+    return (Ig = Ig, Idir = Ig - Idif, Idif = Idif, theta = theta, phi = phi)
 end
 
 # Convert solar irradiance to a particular waveband based on a reference solar
